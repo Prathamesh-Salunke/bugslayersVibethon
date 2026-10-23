@@ -1,0 +1,541 @@
+import React, { useState } from 'react';
+import { useApp } from '../context/AppContext';
+import InteractiveMap from '../components/InteractiveMap';
+import {
+  TrendingUp,
+  AlertTriangle,
+  ShieldCheck,
+  Bike,
+  Building2,
+  UtensilsCrossed,
+  Clock,
+  Split,
+  ChevronRight,
+  Filter,
+  CheckCircle2,
+  AlertCircle,
+  RotateCcw,
+  Navigation,
+  ArrowUpRight,
+  PieChart as PieChartIcon,
+} from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
+
+export default function AdminDashboard() {
+  const {
+    donations,
+    shelters,
+    riders,
+    deliveries,
+    auditLogs,
+    executeSplitPlan,
+    confirmPickup,
+    stepSimulatedMovement,
+    completeDelivery,
+    triggerShelterEmergencyClose,
+    confirmMidRouteDiversion,
+    setActiveRole,
+  } = useApp();
+
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [selectedDonationForSplit, setSelectedDonationForSplit] = useState(null);
+  const [activeSplitResult, setActiveSplitResult] = useState(null);
+
+  // Derived KPIs
+  const totalDonations = donations.length;
+  const eligibleDonations = donations.filter(d => d.safetyStatus === 'ELIGIBLE').length;
+  const reviewRequiredDonations = donations.filter(d => d.safetyStatus === 'REVIEW_REQUIRED').length;
+  const activeDeliveries = deliveries.filter(
+    d => d.status === 'in_transit' || d.status === 'assigned' || d.status === 'diverted'
+  );
+  const totalMealsDelivered = shelters.reduce((acc, s) => acc + (s.receivedToday || 0), 0);
+  const availableRidersCount = riders.filter(r => r.status === 'available').length;
+  const atRiskDeliveries = deliveries.filter(
+    d => d.status === 'in_transit' && d.estimatedMinutesRemaining > 30
+  );
+
+  // Filtered donations
+  const filteredDonations = donations.filter(d => {
+    if (statusFilter === 'ALL') return true;
+    if (statusFilter === 'ELIGIBLE') return d.safetyStatus === 'ELIGIBLE';
+    if (statusFilter === 'REVIEW') return d.safetyStatus === 'REVIEW_REQUIRED';
+    if (statusFilter === 'READY') return d.status === 'ready_for_matching';
+    if (statusFilter === 'IN_TRANSIT') return d.status === 'in_transit';
+    return true;
+  });
+
+  // Chart data
+  const statusData = [
+    { name: 'Delivered', value: deliveries.filter(d => d.status === 'delivered').length + 5, color: '#10b981' },
+    { name: 'In Transit', value: activeDeliveries.length || 1, color: '#3b82f6' },
+    { name: 'Queued', value: donations.filter(d => d.status === 'ready_for_matching').length, color: '#f59e0b' },
+    { name: 'Review Req.', value: reviewRequiredDonations, color: '#ef4444' },
+  ];
+
+  const shelterCapacityData = shelters.map(s => ({
+    name: s.name.split(' ')[0],
+    occupancy: s.currentOccupancy,
+    openDemand: s.openDemand,
+  }));
+
+  const handleRunSplit = donation => {
+    setSelectedDonationForSplit(donation);
+    const result = executeSplitPlan(donation.id);
+    setActiveSplitResult(result);
+  };
+
+  return (
+    <div className="space-y-6 pb-16">
+      {/* Top Operations Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
+              Central Operations Grid
+            </h1>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+              Live Dispatch Mode
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Real-time multi-rider coordination, safety eligibility enforcement, and mid-route disruption monitoring.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveRole('simlab')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold transition shadow-sm"
+          >
+            <Split className="w-4 h-4" />
+            <span>Launch Hackathon Lab</span>
+          </button>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm">
+          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Total Batches</span>
+          <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">{totalDonations}</div>
+          <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">
+            {eligibleDonations} AI Eligible
+          </span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm">
+          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">In Transit</span>
+          <div className="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">
+            {activeDeliveries.length}
+          </div>
+          <span className="text-[10px] text-slate-400 block mt-0.5">Active delivery legs</span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm">
+          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Meals Rescued</span>
+          <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+            {totalMealsDelivered}
+          </div>
+          <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">0% Spoilage</span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm">
+          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Review Required</span>
+          <div className="text-2xl font-black text-amber-500 mt-1">{reviewRequiredDonations}</div>
+          <span className="text-[10px] text-amber-600 font-semibold block mt-0.5">Missing safety meta</span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm">
+          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Available Riders</span>
+          <div className="text-2xl font-black text-forest-700 dark:text-emerald-300 mt-1">
+            {availableRidersCount} / {riders.length}
+          </div>
+          <span className="text-[10px] text-slate-400 block mt-0.5">Ready for dispatch</span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm">
+          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Open Shelter Demand</span>
+          <div className="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1">
+            {shelters.reduce((acc, s) => acc + (s.openDemand || 0), 0)}
+          </div>
+          <span className="text-[10px] text-slate-400 block mt-0.5">Across 5 shelters</span>
+        </div>
+      </div>
+
+      {/* Main Map & Live Transit Tracking Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Map - 2 cols on desktop */}
+        <div className="lg:col-span-2 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Navigation className="w-4 h-4 text-emerald-600" />
+              <span>Real-Time Geospatial Relief Map</span>
+            </h2>
+            <span className="text-[11px] text-slate-500">Live GPS & Route Simulation</span>
+          </div>
+
+          <InteractiveMap height="460px" />
+        </div>
+
+        {/* Live Active Deliveries Feed - 1 col */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Clock className="w-4 h-4 text-blue-600" />
+              <span>Active In-Transit Watch</span>
+            </h2>
+            <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded">
+              {activeDeliveries.length} Moving
+            </span>
+          </div>
+
+          <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
+            {activeDeliveries.length === 0 ? (
+              <div className="p-8 text-center rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 text-slate-400">
+                <Bike className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-xs">No deliveries currently in transit.</p>
+              </div>
+            ) : (
+              activeDeliveries.map(del => (
+                <div
+                  key={del.id}
+                  className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm space-y-3"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="text-[11px] font-mono text-slate-400 font-bold">{del.id}</span>
+                      <h4 className="font-bold text-xs text-slate-900 dark:text-white mt-0.5">
+                        {del.donationItemName}
+                      </h4>
+                      <p className="text-[11px] text-slate-500">{del.quantity} {del.unit}</p>
+                    </div>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        del.status === 'diverted'
+                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                          : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                      }`}
+                    >
+                      {del.status === 'diverted' ? 'DIVERTED REROUTE' : 'EN ROUTE'}
+                    </span>
+                  </div>
+
+                  {/* Rider & Shelter */}
+                  <div className="bg-warm-50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-warm-200 dark:border-slate-700/60 text-xs space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400 text-[11px]">Rider:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{del.riderName}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400 text-[11px]">Destination:</span>
+                      <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                        {del.assignedShelterName}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400 text-[11px]">ETA Remaining:</span>
+                      <span className="font-bold text-blue-600">~{del.estimatedMinutesRemaining} mins</span>
+                    </div>
+                  </div>
+
+                  {/* Quick Simulated Actions */}
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <button
+                      onClick={() => stepSimulatedMovement(del.id)}
+                      className="px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-700 dark:text-blue-300 text-[11px] font-semibold transition"
+                    >
+                      Simulate Step +35%
+                    </button>
+                    <button
+                      onClick={() => completeDelivery(del.id)}
+                      className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold transition shadow-sm"
+                    >
+                      Confirm Delivery
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Analytics Charts & Shelter Capacity Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Delivery Status Distribution */}
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Delivery Pipeline Status
+            </h3>
+            <PieChartIcon className="w-4 h-4 text-slate-400" />
+          </div>
+
+          <div className="h-44 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={statusData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={45}
+                  outerRadius={70}
+                  paddingAngle={4}
+                  dataKey="value"
+                >
+                  {statusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <RechartsTooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            {statusData.map(item => (
+              <div key={item.name} className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: item.color }} />
+                <span className="text-slate-600 dark:text-slate-300 font-medium">
+                  {item.name}: <span className="font-bold">{item.value}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Shelter Open Demand vs Occupancy Bar Chart */}
+        <div className="lg:col-span-2 p-5 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Shelter Intake & Open Demand Balance
+            </h3>
+            <Building2 className="w-4 h-4 text-emerald-600" />
+          </div>
+
+          <div className="h-48 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={shelterCapacityData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <RechartsTooltip />
+                <Bar dataKey="occupancy" fill="#64748b" name="Current Occupancy" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="openDemand" fill="#10b981" name="Open Meal Demand" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-slate-500" /> Gray: Current Residents
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Emerald: Open Meal Request
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Donation Operations Table with Filters */}
+      <div className="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+              Food Surplus Registry & Allocation Controls
+            </h3>
+            <p className="text-xs text-slate-500">
+              Evaluate safety eligibility, partition oversized donations, and assign riders.
+            </p>
+          </div>
+
+          {/* Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+            {['ALL', 'ELIGIBLE', 'REVIEW', 'READY'].map(f => (
+              <button
+                key={f}
+                onClick={() => setStatusFilter(f)}
+                className={`px-3 py-1 rounded-xl text-xs font-semibold transition ${
+                  statusFilter === f
+                    ? 'bg-forest-900 dark:bg-emerald-600 text-white shadow-sm'
+                    : 'bg-warm-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-warm-200'
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-warm-100 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 font-semibold border-y border-warm-200 dark:border-slate-700">
+              <tr>
+                <th className="py-2.5 px-3">Batch ID & Food</th>
+                <th className="py-2.5 px-3">Donor</th>
+                <th className="py-2.5 px-3">Quantity</th>
+                <th className="py-2.5 px-3">Safety Status</th>
+                <th className="py-2.5 px-3">Window</th>
+                <th className="py-2.5 px-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-warm-100 dark:divide-slate-700/60 text-slate-700 dark:text-slate-300">
+              {filteredDonations.map(don => (
+                <tr key={don.id} className="hover:bg-warm-50 dark:hover:bg-slate-700/30 transition">
+                  <td className="py-3 px-3">
+                    <span className="font-mono text-[10px] text-slate-400 block font-bold">{don.id}</span>
+                    <span className="font-bold text-slate-900 dark:text-white block">{don.itemName}</span>
+                    <span className="text-[10px] text-slate-500">{don.category}</span>
+                  </td>
+                  <td className="py-3 px-3">
+                    <span className="font-medium block">{don.donorName}</span>
+                    <span className="text-[10px] text-slate-400 block">{don.location?.address}</span>
+                  </td>
+                  <td className="py-3 px-3">
+                    <span className="font-black text-sm text-slate-900 dark:text-white">
+                      {don.quantity}
+                    </span>{' '}
+                    <span className="text-slate-500">{don.unit}</span>
+                  </td>
+                  <td className="py-3 px-3">
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        don.safetyStatus === 'ELIGIBLE'
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                          : don.safetyStatus === 'REVIEW_REQUIRED'
+                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                          : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                      }`}
+                    >
+                      {don.safetyStatus === 'ELIGIBLE' ? (
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      ) : (
+                        <AlertCircle className="w-3 h-3 text-amber-600" />
+                      )}
+                      {don.safetyStatus}
+                    </span>
+                    <span className="text-[10px] text-slate-400 block mt-0.5 truncate max-w-[160px]" title={don.safetyRule}>
+                      {don.safetyRule}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3">
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      {don.safeWindowHours > 0 ? `~${don.safeWindowHours} hrs` : 'N/A'}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3">
+                    {don.quantity > 50 && don.safetyStatus === 'ELIGIBLE' ? (
+                      <button
+                        onClick={() => handleRunSplit(don)}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 text-amber-700 dark:text-amber-300 font-bold text-[11px] border border-amber-300 dark:border-amber-700 transition"
+                      >
+                        <Split className="w-3 h-3" />
+                        <span>Run Multi-Split</span>
+                      </button>
+                    ) : (
+                      <span className="text-[11px] text-slate-400">
+                        {don.status === 'in_transit' ? 'En route' : 'Standard batch'}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Multi-Rider Split Modal Preview */}
+      {selectedDonationForSplit && activeSplitResult && (
+        <div className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 shadow-md space-y-3 animate-fade-in">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Split className="w-5 h-5 text-amber-600" />
+              <h3 className="font-bold text-sm text-amber-950 dark:text-amber-200">
+                Multi-Rider Smart Partitioning Plan Generated
+              </h3>
+            </div>
+            <button
+              onClick={() => setSelectedDonationForSplit(null)}
+              className="text-xs text-amber-800 dark:text-amber-300 hover:underline font-semibold"
+            >
+              Dismiss
+            </button>
+          </div>
+
+          <p className="text-xs text-amber-900 dark:text-amber-300">
+            {activeSplitResult.explanation}
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+            {activeSplitResult.plan.map(p => (
+              <div
+                key={p.riderId}
+                className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-amber-200 dark:border-slate-700 text-xs space-y-1 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900 dark:text-white">{p.riderName}</span>
+                  <span className="text-[10px] text-emerald-600 font-bold">{p.reliabilityScore}% Rel</span>
+                </div>
+                <div className="flex justify-between text-slate-600 dark:text-slate-300">
+                  <span>Assigned Load:</span>
+                  <span className="font-extrabold text-amber-600">{p.allocatedQuantity} meals</span>
+                </div>
+                <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden mt-1">
+                  <div
+                    className="bg-amber-500 h-full rounded-full"
+                    style={{ width: `${p.percentageOfRiderCapacity}%` }}
+                  />
+                </div>
+                <span className="text-[10px] text-slate-400 block text-right">
+                  {p.percentageOfRiderCapacity}% of vehicle limit
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Live Activity & Audit Stream */}
+      <div className="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Live System Activity Feed
+          </h3>
+          <span className="text-[11px] text-emerald-600 font-semibold">Real-Time Sync</span>
+        </div>
+
+        <div className="divide-y divide-warm-100 dark:divide-slate-700/60 text-xs">
+          {auditLogs.slice(0, 5).map(log => (
+            <div key={log.id} className="py-2.5 flex items-start gap-3">
+              <span className="font-mono text-[10px] text-slate-400 shrink-0 mt-0.5">
+                {new Date(log.timestamp).toLocaleTimeString()}
+              </span>
+              <div className="flex-1 space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-slate-800 dark:text-slate-200">{log.actionType}</span>
+                  <span className="text-[10px] bg-slate-100 dark:bg-slate-700 px-1.5 rounded text-slate-500">
+                    {log.actor}
+                  </span>
+                </div>
+                <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed">
+                  {log.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
