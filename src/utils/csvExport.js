@@ -1,4 +1,17 @@
 // CSV Export helper
+
+export function exportAuditLogCSV(auditLogs) {
+  exportToCSV('RescueOS_AuditLog', auditLogs.map(l => ({
+    id: l.id,
+    timestamp: l.timestamp,
+    actionType: l.actionType,
+    actor: l.actor,
+    target: l.target,
+    description: l.description,
+    severity: l.severity,
+  })));
+}
+
 export function exportToCSV(filename, rows) {
   if (!rows || !rows.length) return;
   const separator = ',';

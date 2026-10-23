@@ -4,12 +4,43 @@
 
 @layer base {
   body {
-    @apply font-sans bg-stonebg-50 text-slate-800 dark:bg-obsidian-950 dark:text-slate-100 selection:bg-forest-600 selection:text-white;
-    background-image: 
-      radial-gradient(at 15% 15%, rgba(34, 173, 125, 0.04) 0px, transparent 55%),
-      radial-gradient(at 85% 85%, rgba(245, 158, 11, 0.03) 0px, transparent 50%);
-    background-attachment: fixed;
+    @apply font-sans text-slate-100 selection:bg-emerald-700 selection:text-white;
+    background-color: #071a10;
   }
+  
+  /* Dark scrollbar everywhere */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(16, 185, 129, 0.2) transparent;
+  }
+}
+
+/* Utility: hide scrollbar but keep scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Animate-in for modals */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-in {
+  animation: fadeIn 0.15s ease-out forwards;
+}
+.fade-in { animation-name: fadeIn; }
+
+/* Slide up for dropdown menus */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slideUp 0.15s ease-out;
 }
 
 /* Glassmorphism & Card surfaces */

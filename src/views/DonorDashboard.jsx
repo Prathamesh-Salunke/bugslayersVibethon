@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import FlipkartOrderTrackingModal from '../components/FlipkartOrderTrackingModal';
+import QRCodeModal from '../components/QRCodeModal';
 import {
   FOOD_CATEGORIES,
   STORAGE_METHODS,
@@ -54,6 +56,8 @@ export default function DonorDashboard() {
   const [activeTab, setActiveTab] = useState('presets'); // 'presets' | 'custom'
   const [selectedTrackingDonationId, setSelectedTrackingDonationId] = useState('DON-102');
   const [activeReceipt, setActiveReceipt] = useState(null);
+  const [fullTrackingOpen, setFullTrackingOpen] = useState(false);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -237,7 +241,7 @@ export default function DonorDashboard() {
               </span>
               <div className="text-lg font-black text-white font-display">
                 {trackedDelivery.status === 'delivered' ? (
-                  <span className="text-emerald-400">Delivered & Signed ✅</span>
+                  <span className="text-emerald-400">Delivered &amp; Signed ✅</span>
                 ) : (
                   <span>Today in ~{trackedDelivery.estimatedMinutesRemaining} mins</span>
                 )}
@@ -245,8 +249,16 @@ export default function DonorDashboard() {
               <span className="text-[11px] text-forest-200/80 block mt-0.5">
                 {trackedDelivery.status === 'delivered' ? 'Intake verified at destination' : `${trackedDelivery.distanceKm} km from destination`}
               </span>
+              {/* Open Full-Screen Tracking Modal */}
+              <button
+                onClick={() => setFullTrackingOpen(true)}
+                className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-cyan-300 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl transition"
+              >
+                <span>📦 Full Tracking View</span>
+              </button>
             </div>
-          </div>
+
+          </div>{/* End Top E-Commerce Header Bar */}
 
           {/* Flipkart / Amazon Style Horizontal Stepper */}
           <div className="px-6 sm:px-8 pt-2 pb-4">
@@ -874,6 +886,23 @@ export default function DonorDashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Full-Screen Tracking Modal */}
+      {trackedDelivery && (
+        <>
+          <FlipkartOrderTrackingModal
+            isOpen={fullTrackingOpen}
+            deliveryId={trackedDelivery.id}
+            onClose={() => setFullTrackingOpen(false)}
+            onOpenQR={data => { setQrModalOpen(true); setFullTrackingOpen(false); }}
+          />
+          <QRCodeModal
+            isOpen={qrModalOpen}
+            data={trackedDelivery}
+            onClose={() => setQrModalOpen(false)}
+          />
+        </>
       )}
     </div>
   );
