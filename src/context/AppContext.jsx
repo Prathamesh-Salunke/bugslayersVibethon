@@ -165,7 +165,107 @@ export function AppProvider({ children }) {
       safetyResult.status === 'ELIGIBLE' ? 'success' : 'warning'
     );
 
+    // If eligible, automatically dispatch courier and match destination shelter!
+    if (safetyResult.status === 'ELIGIBLE') {
+      setTimeout(() => {
+        autoDispatchDonation(newId, newDonation);
+      }, 400);
+    }
+
     return newDonation;
+  };
+
+  // Auto-dispatch donation immediately to top rider and top shelter
+  const autoDispatchDonation = (donationId, donationData = null) => {
+    const donation = donationData || donations.find(d => d.id === donationId);
+    if (!donation) return null;
+
+    // Check if delivery already exists for this donation
+    const existing = deliveries.find(d => d.donationId === donationId);
+    if (existing) return existing;
+
+    // Pick top available rider or first available
+    const availableRider = riders.find(r => r.status === 'available') || riders[0];
+    // Pick compatible open shelter with demand
+    const targetShelter = shelters.find(s => s.status === 'open' && s.openDemand > 0) || shelters[0];
+
+    const deliveryId = `DEL-${Date.now().toString().slice(-4)}`;
+    const newDelivery = {
+      id: deliveryId,
+      donationId: donation.id,
+      donationItemName: donation.itemName,
+      quantity: donation.quantity,
+      unit: donation.unit || 'meals',
+      donorName: donation.donorName || 'Donor',
+      donorAddress: donation.location?.address || 'Pickup Hub',
+      pickupLocation: donation.location || { lat: 19.055, lng: 72.83 },
+      assignedShelterId: targetShelter.id,
+      assignedShelterName: targetShelter.name,
+      shelterAddress: targetShelter.address,
+      destinationLocation: targetShelter.location || { lat: 19.0833, lng: 72.8397 },
+      riderId: availableRider.id,
+      riderName: availableRider.name,
+      riderPhone: availableRider.phone,
+      riderVehicle: availableRider.vehicle,
+      currentRiderLocation: { ...(availableRider.currentLocation || { lat: 19.06, lng: 72.835 }) },
+      status: 'in_transit',
+      distanceKm: 3.6,
+      estimatedMinutesRemaining: 14,
+      assignedAt: new Date().toISOString(),
+      pickedUpAt: new Date().toISOString(),
+      isVegetarian: donation.isVegetarian,
+      foodCategory: donation.category,
+      storageMethod: donation.storageMethod,
+      needsCooking: donation.needsCooking,
+      safeWindowHours: donation.safeWindowHours || 3,
+      auditTrail: [
+        {
+          timestamp: new Date().toISOString(),
+          action: 'AUTO_DISPATCHED',
+          actor: 'Smart Allocation Engine',
+          details: `Allocated to Rider ${availableRider.name} heading for ${targetShelter.name}.`,
+        },
+      ],
+    };
+
+    setDeliveries(prev => [newDelivery, ...prev]);
+
+    // Update rider
+    setRiders(prev =>
+      prev.map(r => (r.id === availableRider.id ? { ...r, status: 'in_transit', activeDeliveryId: deliveryId } : r))
+    );
+
+    // Update donation
+    setDonations(prev =>
+      prev.map(d =>
+        d.id === donationId
+          ? {
+              ...d,
+              status: 'in_transit',
+              assignedRiderId: availableRider.id,
+              assignedRiderName: availableRider.name,
+              assignedShelterId: targetShelter.id,
+              assignedShelterName: targetShelter.name,
+            }
+          : d
+      )
+    );
+
+    logAudit(
+      'AUTO_DISPATCHED',
+      'Smart Allocation Engine',
+      deliveryId,
+      `Donation ${donationId} paired with Courier ${availableRider.name} en route to ${targetShelter.name}.`,
+      'SUCCESS'
+    );
+
+    addToast(
+      'Courier Dispatched! 🚴',
+      `${availableRider.name} is on the way to pick up and deliver to ${targetShelter.name}.`,
+      'success'
+    );
+
+    return newDelivery;
   };
 
   // Smart split allocation
@@ -726,6 +826,7 @@ export function AppProvider({ children }) {
         removeToast,
         logAudit,
         createDonation,
+        autoDispatchDonation,
         executeSplitPlan,
         createReservation,
         confirmReservation,
