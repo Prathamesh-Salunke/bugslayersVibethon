@@ -773,6 +773,108 @@ export function AppProvider({ children }) {
     );
   };
 
+  // Fulfill shelter requirement mid-route and auto-redirect ride to another nearest shelter
+  const fulfillShelterRequirementAndReroute = (shelterId, deliveryId = null) => {
+    // 1. Mark shelter demand fulfilled (0 open demand, capacity reached)
+    const targetShelter = shelters.find(s => s.id === shelterId);
+    if (!targetShelter) return null;
+
+    setShelters(prev =>
+      prev.map(s =>
+        s.id === shelterId
+          ? { ...s, openDemand: 0, currentOccupancy: s.capacity }
+          : s
+      )
+    );
+
+    // 2. Find in-transit delivery to this shelter
+    const deliveryToReroute = deliveryId
+      ? deliveries.find(d => d.id === deliveryId)
+      : deliveries.find(
+          d =>
+            d.assignedShelterId === shelterId &&
+            (d.status === 'in_transit' || d.status === 'assigned' || d.status === 'diverted')
+        );
+
+    if (!deliveryToReroute) {
+      addToast(
+        'Shelter Fulfilled',
+        `${targetShelter.name} requirements fulfilled. No active courier was en route.`,
+        'info'
+      );
+      return null;
+    }
+
+    // 3. Find next nearest compatible shelter with open demand
+    const rescueResult = evaluateMidRouteRescue(
+      deliveryToReroute,
+      shelters.map(s => (s.id === shelterId ? { ...s, openDemand: 0, status: 'full' } : s)),
+      `Shelter ${targetShelter.name} requirement 100% fulfilled mid-route`
+    );
+
+    if (rescueResult && rescueResult.recommendedShelter) {
+      const newShelter = rescueResult.recommendedShelter;
+
+      // Update delivery destination immediately
+      setDeliveries(prev =>
+        prev.map(del => {
+          if (del.id === deliveryToReroute.id) {
+            return {
+              ...del,
+              assignedShelterId: newShelter.id,
+              assignedShelterName: newShelter.name,
+              shelterAddress: newShelter.address,
+              destinationLocation: newShelter.location,
+              distanceKm: rescueResult.diversionDistKm,
+              estimatedMinutesRemaining: rescueResult.diversionEtaMinutes,
+              status: 'diverted',
+              rerouteReason: `Original destination (${targetShelter.name}) requirement was 100% fulfilled mid-route. Automatically redirected to nearest open shelter.`,
+              auditTrail: [
+                ...del.auditTrail,
+                {
+                  timestamp: new Date().toISOString(),
+                  action: 'MID_ROUTE_REDIRECTED_FULFILLED',
+                  actor: 'Mid-Route Diversion Engine',
+                  details: `Shelter ${targetShelter.name} requirement fulfilled mid-route. Redirected to nearest compatible shelter ${newShelter.name} (${rescueResult.diversionDistKm} km away).`,
+                },
+              ],
+            };
+          }
+          return del;
+        })
+      );
+
+      logAudit(
+        'MID_ROUTE_REDIRECTED_FULFILLED',
+        'Mid-Route Diversion Engine',
+        deliveryToReroute.id,
+        `Original shelter ${targetShelter.name} requirement fulfilled. Courier auto-redirected to ${newShelter.name} (${rescueResult.diversionDistKm} km away).`,
+        'SUCCESS'
+      );
+
+      addToast(
+        '🔄 Ride Redirected Mid-Way!',
+        `${targetShelter.name} requirement fulfilled! Courier redirected to nearest shelter: ${newShelter.name}.`,
+        'success'
+      );
+
+      return {
+        success: true,
+        originalShelter: targetShelter,
+        newShelter,
+        diversionDistKm: rescueResult.diversionDistKm,
+        etaMinutes: rescueResult.diversionEtaMinutes,
+      };
+    } else {
+      addToast(
+        'Shelter Fulfilled',
+        `${targetShelter.name} fulfilled, but no secondary compatible shelter with open demand found. Escalated to Dispatch.`,
+        'warning'
+      );
+      return null;
+    }
+  };
+
   // Reset to initial clean state
   const resetToInitialData = () => {
     setShelters(INITIAL_SHELTERS);
@@ -836,6 +938,7 @@ export function AppProvider({ children }) {
         completeDelivery,
         triggerShelterEmergencyClose,
         confirmMidRouteDiversion,
+        fulfillShelterRequirementAndReroute,
         resetToInitialData,
       }}
     >

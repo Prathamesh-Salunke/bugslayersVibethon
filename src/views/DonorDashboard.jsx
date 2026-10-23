@@ -30,6 +30,10 @@ import {
   Building2,
   Check,
   FileCheck,
+  Truck,
+  RotateCw,
+  MessageCircle,
+  ExternalLink,
 } from 'lucide-react';
 
 export default function DonorDashboard() {
@@ -43,6 +47,7 @@ export default function DonorDashboard() {
     stepSimulatedMovement,
     completeDelivery,
     autoDispatchDonation,
+    fulfillShelterRequirementAndReroute,
     setActiveRole,
   } = useApp();
 
@@ -70,7 +75,7 @@ export default function DonorDashboard() {
     notes: 'Kept above 65°C hot hold. Clean stainless containers.',
   });
 
-  // Currently tracked delivery (find delivery matching selected donation)
+  // Tracked delivery
   const trackedDelivery =
     deliveries.find(d => d.donationId === selectedTrackingDonationId) ||
     deliveries.find(d => d.status === 'in_transit' || d.status === 'assigned' || d.status === 'diverted') ||
@@ -81,17 +86,7 @@ export default function DonorDashboard() {
     donations.find(d => d.id === trackedDelivery?.donationId) ||
     donations[0];
 
-  // Live Safety Engine Evaluation Preview
-  const liveSafetyResult = evaluateFoodSafetyEligibility({
-    category: formData.category,
-    cookedOrPackaged: formData.cookedOrPackaged,
-    prepTimeHoursAgo: Number(formData.prepTimeHoursAgo),
-    storageMethod: formData.storageMethod,
-    packagingType: formData.packagingType,
-    hasStorageHistory: formData.hasStorageHistory,
-    verifiedUseByHoursRemaining: 4,
-  });
-
+  // Presets
   const presets = [
     {
       id: 'wedding',
@@ -170,6 +165,11 @@ export default function DonorDashboard() {
     }
   };
 
+  const handleSimulateFulfillAndReroute = () => {
+    if (!trackedDelivery) return;
+    fulfillShelterRequirementAndReroute(trackedDelivery.assignedShelterId, trackedDelivery.id);
+  };
+
   return (
     <div className="space-y-8 pb-20">
       {/* Top Header */}
@@ -177,281 +177,375 @@ export default function DonorDashboard() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-slate-900 dark:text-white font-display">
-              Food Donor Coordination Hub
+              Food Donor Hub & Live Order Tracker
             </h1>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-forest-100 text-forest-800 dark:bg-forest-950 dark:text-forest-300 border border-forest-200 dark:border-forest-800">
-              Live Courier Tracking Active
+              Flipkart / Amazon-Style Logistics Tracking
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Declare surplus food, monitor your assigned volunteer courier live, and track verified delivery to the shelter.
+            Real-time step-by-step courier telemetry, live route mapping, and mid-route automatic redirection if shelter requirements get fulfilled.
           </p>
         </div>
 
-        {/* Tab Toggle */}
-        <div className="flex items-center bg-stonebg-100 dark:bg-obsidian-900 p-1 rounded-2xl border border-stonebg-200 dark:border-obsidian-700 self-start sm:self-auto">
-          <button
-            onClick={() => setActiveTab('presets')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-              activeTab === 'presets'
-                ? 'bg-white dark:bg-obsidian-800 text-forest-950 dark:text-forest-200 shadow-sm'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-            }`}
+        {/* Switch tracked donation */}
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-slate-500 font-semibold">Active Order:</span>
+          <select
+            value={selectedTrackingDonationId}
+            onChange={e => setSelectedTrackingDonationId(e.target.value)}
+            className="px-3 py-1.5 rounded-xl border border-stonebg-300 dark:border-obsidian-700 bg-white dark:bg-obsidian-800 text-slate-900 dark:text-white font-bold"
           >
-            <Zap className="w-3.5 h-3.5 text-forest-600 dark:text-forest-400" />
-            <span>1-Click Presets</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('custom')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-              activeTab === 'custom'
-                ? 'bg-white dark:bg-obsidian-800 text-forest-950 dark:text-forest-200 shadow-sm'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <Sliders className="w-3.5 h-3.5 text-forest-600 dark:text-forest-400" />
-            <span>Custom Form</span>
-          </button>
+            {donations.map(d => (
+              <option key={d.id} value={d.id}>
+                {d.id}: {d.itemName.slice(0, 22)}... ({d.status.toUpperCase()})
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
       {/* ========================================================================= */}
-      {/* 🚀 HIGHLIGHT SECTION: LIVE COURIER & DESTINATION TRACKER (ANSWER TO PROMPT) */}
+      {/* 📦 FLIPKART / AMAZON STYLE LIVE ORDER & COURIER TRACKER */}
       {/* ========================================================================= */}
-      <div className="lux-card p-6 sm:p-7 border-2 border-forest-500/40 dark:border-forest-600/40 shadow-xl space-y-6 bg-gradient-to-br from-white via-forest-50/20 to-stonebg-50 dark:from-obsidian-900 dark:via-obsidian-900/90 dark:to-obsidian-950">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stonebg-200 dark:border-obsidian-700 pb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-forest-500 animate-ping" />
-              <h2 className="text-lg font-black text-slate-900 dark:text-white font-display flex items-center gap-2">
-                <span>Live Courier & Destination Radar</span>
-              </h2>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Track your assigned volunteer courier in real time and verify arrival at the required shelter.
-            </p>
-          </div>
-
-          {/* Select which donation to track */}
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-slate-500 font-semibold">Track Batch:</span>
-            <select
-              value={selectedTrackingDonationId}
-              onChange={e => setSelectedTrackingDonationId(e.target.value)}
-              className="px-3 py-1.5 rounded-xl border border-stonebg-300 dark:border-obsidian-700 bg-white dark:bg-obsidian-800 text-slate-900 dark:text-white font-bold"
-            >
-              {donations.map(d => (
-                <option key={d.id} value={d.id}>
-                  {d.id}: {d.itemName.slice(0, 24)}... ({d.status.toUpperCase()})
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {trackedDelivery ? (
-          <div className="space-y-6">
-            {/* Visual Stepper: Kitchen -> Courier -> In Transit -> Shelter Verified */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
-                <span className="flex items-center gap-1.5 text-forest-700 dark:text-forest-400">
-                  <CheckCircle2 className="w-4 h-4" /> 1. Prepared at Kitchen
+      {trackedDelivery && (
+        <div className="lux-card overflow-hidden border-2 border-forest-500/50 shadow-2xl bg-white dark:bg-obsidian-900 space-y-6">
+          {/* Top E-Commerce Header Bar */}
+          <div className="bg-gradient-to-r from-forest-950 via-forest-900 to-obsidian-950 text-white p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-mono tracking-widest uppercase bg-forest-500/20 text-forest-300 px-2.5 py-0.5 rounded-full border border-forest-500/30 font-bold">
+                  TRACKING #{trackedDelivery.id}
                 </span>
-                <span className={`flex items-center gap-1.5 ${trackedDelivery.pickedUpAt ? 'text-forest-700 dark:text-forest-400' : 'text-slate-400'}`}>
-                  {trackedDelivery.pickedUpAt ? <CheckCircle2 className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
-                  2. Courier Picked Up
-                </span>
-                <span className={`flex items-center gap-1.5 ${trackedDelivery.status === 'in_transit' || trackedDelivery.status === 'diverted' ? 'text-blue-600 animate-pulse' : trackedDelivery.status === 'delivered' ? 'text-forest-700' : 'text-slate-400'}`}>
-                  <Bike className="w-4 h-4" /> 3. En Route on Road
-                </span>
-                <span className={`flex items-center gap-1.5 ${trackedDelivery.status === 'delivered' ? 'text-forest-700 font-black' : 'text-slate-400'}`}>
-                  <Building2 className="w-4 h-4" /> 4. Verified at Shelter
-                </span>
+                {trackedDelivery.status === 'diverted' && (
+                  <span className="text-[11px] font-bold bg-gold-500 text-slate-950 px-2.5 py-0.5 rounded-full animate-pulse">
+                    ⚡ REROUTED MID-WAY
+                  </span>
+                )}
               </div>
+              <h2 className="text-lg sm:text-xl font-extrabold font-display">
+                {trackedDelivery.donationItemName}
+              </h2>
+              <p className="text-xs text-forest-100/70">
+                Batch Size: <span className="font-bold text-white">{trackedDelivery.quantity} {trackedDelivery.unit}</span> • Donor Facility: {trackedDelivery.donorName}
+              </p>
+            </div>
 
-              {/* Progress Bar Line */}
-              <div className="w-full bg-slate-200 dark:bg-obsidian-800 h-2.5 rounded-full overflow-hidden">
+            <div className="text-left sm:text-right bg-white/5 p-3 rounded-2xl border border-white/10 shrink-0">
+              <span className="text-[10px] text-forest-300 uppercase tracking-widest font-mono block">
+                Estimated Delivery
+              </span>
+              <div className="text-lg font-black text-white font-display">
+                {trackedDelivery.status === 'delivered' ? (
+                  <span className="text-emerald-400">Delivered & Signed ✅</span>
+                ) : (
+                  <span>Today in ~{trackedDelivery.estimatedMinutesRemaining} mins</span>
+                )}
+              </div>
+              <span className="text-[11px] text-forest-200/80 block mt-0.5">
+                {trackedDelivery.status === 'delivered' ? 'Intake verified at destination' : `${trackedDelivery.distanceKm} km from destination`}
+              </span>
+            </div>
+          </div>
+
+          {/* Flipkart / Amazon Style Horizontal Stepper */}
+          <div className="px-6 sm:px-8 pt-2 pb-4">
+            <div className="relative">
+              {/* Stepper Connecting Bar */}
+              <div className="absolute top-4 left-6 right-6 h-1 bg-stonebg-200 dark:bg-obsidian-800 -z-0">
                 <div
-                  className="bg-gradient-to-r from-forest-600 via-forest-500 to-emerald-400 h-full rounded-full transition-all duration-500"
+                  className="bg-forest-600 h-full transition-all duration-500"
                   style={{
                     width:
                       trackedDelivery.status === 'delivered'
                         ? '100%'
-                        : trackedDelivery.status === 'in_transit'
-                        ? `${Math.max(40, 100 - (trackedDelivery.estimatedMinutesRemaining / 18) * 100)}%`
-                        : '25%',
+                        : trackedDelivery.status === 'in_transit' || trackedDelivery.status === 'diverted'
+                        ? '66%'
+                        : '33%',
                   }}
                 />
               </div>
-            </div>
 
-            {/* Courier & Destination Split Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Courier Card */}
-              <div className="lux-card p-4 space-y-3 bg-stonebg-50/80 dark:bg-obsidian-900/60 border border-stonebg-200 dark:border-obsidian-700">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400 font-bold block">
-                    Assigned Volunteer Courier
-                  </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
-                    {trackedDelivery.status.toUpperCase()}
-                  </span>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-950 flex items-center justify-center text-blue-600 shrink-0">
-                    <Bike className="w-6 h-6" />
+              {/* 4 Steps */}
+              <div className="relative z-10 grid grid-cols-4 gap-2 text-center text-xs">
+                {/* Step 1: Placed */}
+                <div className="space-y-1.5 flex flex-col items-center">
+                  <div className="w-8 h-8 rounded-full bg-forest-600 text-white font-bold flex items-center justify-center shadow-md">
+                    <Check className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-sm text-slate-900 dark:text-white font-display">
-                      {trackedDelivery.riderName}
-                    </h3>
-                    <p className="text-xs text-slate-500">{trackedDelivery.riderVehicle}</p>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-slate-600 dark:text-slate-300">
-                      <Phone className="w-3.5 h-3.5 text-slate-400" />
-                      <span className="font-mono">{trackedDelivery.riderPhone}</span>
-                    </div>
+                    <span className="font-bold text-slate-900 dark:text-white block">Donation Verified</span>
+                    <span className="text-[10px] text-slate-400">10:15 PM</span>
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-obsidian-800 p-2.5 rounded-xl border border-stonebg-200 dark:border-obsidian-700 flex justify-between text-xs">
+                {/* Step 2: Picked Up */}
+                <div className="space-y-1.5 flex flex-col items-center">
+                  <div
+                    className={`w-8 h-8 rounded-full font-bold flex items-center justify-center shadow-md ${
+                      trackedDelivery.pickedUpAt
+                        ? 'bg-forest-600 text-white'
+                        : 'bg-stonebg-200 dark:bg-obsidian-800 text-slate-400'
+                    }`}
+                  >
+                    <Check className="w-4 h-4" />
+                  </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block font-medium">Distance Away</span>
-                    <span className="font-bold text-slate-900 dark:text-white">
-                      {trackedDelivery.status === 'delivered' ? '0.0 km (Arrived)' : `${trackedDelivery.distanceKm} km`}
+                    <span className="font-bold text-slate-900 dark:text-white block">Picked Up</span>
+                    <span className="text-[10px] text-slate-400">Inspected at Kitchen</span>
+                  </div>
+                </div>
+
+                {/* Step 3: Out for Delivery */}
+                <div className="space-y-1.5 flex flex-col items-center">
+                  <div
+                    className={`w-8 h-8 rounded-full font-bold flex items-center justify-center shadow-md ${
+                      trackedDelivery.status === 'in_transit' || trackedDelivery.status === 'diverted'
+                        ? 'bg-blue-600 text-white animate-pulse ring-4 ring-blue-500/20'
+                        : trackedDelivery.status === 'delivered'
+                        ? 'bg-forest-600 text-white'
+                        : 'bg-stonebg-200 dark:bg-obsidian-800 text-slate-400'
+                    }`}
+                  >
+                    <Bike className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-900 dark:text-white block">
+                      {trackedDelivery.status === 'diverted' ? 'Rerouted Mid-Way' : 'Out for Delivery'}
+                    </span>
+                    <span className="text-[10px] text-blue-600 font-semibold font-mono">
+                      {trackedDelivery.status === 'delivered' ? 'Completed' : 'Live GPS Moving'}
                     </span>
                   </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-slate-400 block font-medium">ETA to Destination</span>
-                    <span className="font-black text-blue-600">
-                      {trackedDelivery.status === 'delivered' ? 'Completed' : `~${trackedDelivery.estimatedMinutesRemaining} mins`}
+                </div>
+
+                {/* Step 4: Reached Shelter */}
+                <div className="space-y-1.5 flex flex-col items-center">
+                  <div
+                    className={`w-8 h-8 rounded-full font-bold flex items-center justify-center shadow-md ${
+                      trackedDelivery.status === 'delivered'
+                        ? 'bg-forest-600 text-white ring-4 ring-forest-500/20'
+                        : 'bg-stonebg-200 dark:bg-obsidian-800 text-slate-400'
+                    }`}
+                  >
+                    <Building2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-900 dark:text-white block">Destination Reached</span>
+                    <span className="text-[10px] text-slate-400">
+                      {trackedDelivery.status === 'delivered' ? 'Signed & Distributed' : 'Pending Arrival'}
                     </span>
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
 
-              {/* Destination Shelter Card */}
-              <div className="lux-card p-4 space-y-3 bg-stonebg-50/80 dark:bg-obsidian-900/60 border border-stonebg-200 dark:border-obsidian-700">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400 font-bold block">
-                    Required Destination Shelter
-                  </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-forest-100 text-forest-800 dark:bg-forest-950 dark:text-forest-300">
-                    VERIFIED COMPATIBLE
+          {/* Courier Card & Dynamic Destination Card */}
+          <div className="px-6 sm:px-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Courier Profile (Amazon Style) */}
+            <div className="lux-card p-4 space-y-3 bg-stonebg-50/70 dark:bg-obsidian-900/50">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold block">
+                  Delivery Courier Partner
+                </span>
+                <span className="text-[10px] font-bold text-forest-700 bg-forest-100 dark:bg-forest-950 px-2 py-0.5 rounded-full">
+                  ★ 4.9 (62 rescues)
+                </span>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-600 shrink-0">
+                  <Bike className="w-6 h-6" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-extrabold text-sm text-slate-900 dark:text-white font-display">
+                    {trackedDelivery.riderName}
+                  </h4>
+                  <p className="text-xs text-slate-500">{trackedDelivery.riderVehicle}</p>
+                  <span className="text-[11px] text-slate-400 font-mono block mt-0.5">
+                    Plate: MH-02-CX-4821
                   </span>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-forest-100 dark:bg-forest-950 flex items-center justify-center text-forest-600 shrink-0">
-                    <Building2 className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-sm text-forest-900 dark:text-forest-200 font-display">
-                      {trackedDelivery.assignedShelterName}
-                    </h3>
-                    <p className="text-xs text-slate-500">{trackedDelivery.shelterAddress}</p>
-                    <div className="flex items-center gap-1.5 mt-1 text-[11px] text-forest-700 dark:text-forest-400 font-semibold">
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Has Clean Water & Chilled Storage</span>
-                    </div>
-                  </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => alert(`Calling volunteer courier ${trackedDelivery.riderName} at ${trackedDelivery.riderPhone}...`)}
+                    className="p-2 rounded-xl bg-white dark:bg-obsidian-800 border border-stonebg-200 dark:border-obsidian-700 text-slate-700 dark:text-slate-200 hover:border-forest-500 transition"
+                    title="Call Courier"
+                  >
+                    <Phone className="w-4 h-4 text-forest-600" />
+                  </button>
                 </div>
+              </div>
 
-                {/* How to Check Whether It Reached Destination */}
-                <div
-                  className={`p-2.5 rounded-xl border text-xs flex items-center justify-between ${
-                    trackedDelivery.status === 'delivered'
-                      ? 'bg-forest-100 dark:bg-forest-950/80 border-forest-300 dark:border-forest-700 text-forest-900 dark:text-forest-200'
-                      : 'bg-warm-100 dark:bg-obsidian-800 text-slate-600 dark:text-slate-300'
+              <div className="bg-white dark:bg-obsidian-800 p-2.5 rounded-xl border border-stonebg-200 dark:border-obsidian-700 text-xs flex justify-between">
+                <div>
+                  <span className="text-slate-400 text-[10px] block">Live Status:</span>
+                  <span className="font-bold text-slate-900 dark:text-white">
+                    {trackedDelivery.status === 'delivered' ? 'Completed Handover' : 'Driving on Route'}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-slate-400 text-[10px] block">Remaining Distance:</span>
+                  <span className="font-black text-blue-600">
+                    {trackedDelivery.status === 'delivered' ? '0.0 km' : `${trackedDelivery.distanceKm} km`}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Destination Shelter with Dynamic Reroute Alert */}
+            <div className="lux-card p-4 space-y-3 bg-stonebg-50/70 dark:bg-obsidian-900/50">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold block">
+                  Delivery Destination
+                </span>
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    trackedDelivery.status === 'diverted'
+                      ? 'bg-gold-100 text-gold-900 dark:bg-gold-950 dark:text-gold-300'
+                      : 'bg-forest-100 text-forest-900 dark:bg-forest-950 dark:text-forest-300'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <FileCheck className="w-4 h-4 text-forest-600" />
-                    <div>
-                      <span className="font-bold block text-xs">
-                        {trackedDelivery.status === 'delivered'
-                          ? '✅ Reached & Confirmed at Shelter!'
-                          : 'Shelter Intake Status'}
-                      </span>
-                      <span className="text-[10px] opacity-80">
-                        {trackedDelivery.status === 'delivered'
-                          ? `Official verified intake: ${trackedDelivery.quantity} ${trackedDelivery.unit} distributed.`
-                          : 'Awaiting courier arrival and physical intake scan.'}
-                      </span>
-                    </div>
-                  </div>
-                  {trackedDelivery.status === 'delivered' && (
-                    <span className="px-2 py-0.5 bg-forest-700 text-white rounded text-[10px] font-bold">
-                      VERIFIED
-                    </span>
-                  )}
+                  {trackedDelivery.status === 'diverted' ? 'REDIRECTED SHELTER' : 'VERIFIED INTAKE'}
+                </span>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                    trackedDelivery.status === 'diverted'
+                      ? 'bg-gold-500/10 border border-gold-500/30 text-gold-600'
+                      : 'bg-forest-500/10 border border-forest-500/30 text-forest-600'
+                  }`}
+                >
+                  <Building2 className="w-6 h-6" />
                 </div>
+                <div>
+                  <h4 className="font-extrabold text-sm text-slate-900 dark:text-white font-display">
+                    {trackedDelivery.assignedShelterName}
+                  </h4>
+                  <p className="text-xs text-slate-500">{trackedDelivery.shelterAddress}</p>
+                  <div className="flex items-center gap-1.5 mt-1 text-[11px] text-forest-700 dark:text-forest-400 font-semibold">
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Clean Potable Water & Chilled Storage Verified</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Reroute explanation if diverted */}
+              {trackedDelivery.status === 'diverted' ? (
+                <div className="p-2.5 rounded-xl bg-gold-50 dark:bg-gold-950/60 border border-gold-300 dark:border-gold-800 text-[11px] text-gold-950 dark:text-gold-200">
+                  <span className="font-bold flex items-center gap-1">
+                    <RotateCw className="w-3.5 h-3.5 animate-spin" /> Mid-Route Auto-Redirection
+                  </span>
+                  <p className="mt-0.5 opacity-90 leading-tight">
+                    {trackedDelivery.rerouteReason ||
+                      'Original shelter requirement was fulfilled mid-route. The algorithm redirected this consignment to the nearest open shelter with zero food waste.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="p-2.5 rounded-xl bg-white dark:bg-obsidian-800 border border-stonebg-200 dark:border-obsidian-700 text-[11px] text-slate-600 dark:text-slate-300 flex justify-between">
+                  <span>Destination Shelter Status:</span>
+                  <span className="font-bold text-forest-700 dark:text-forest-400">Open & Ready for Handover</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* ⚡ THE HIGHLIGHT INNOVATION: SHELTER DEMAND FULFILLED AUTO-REROUTE BUTTON */}
+          {/* ========================================================================= */}
+          <div className="mx-6 sm:mx-8 p-4 rounded-2xl bg-gradient-to-r from-gold-50 via-amber-50 to-orange-50 dark:from-obsidian-900 dark:via-obsidian-800 dark:to-obsidian-900 border-2 border-gold-400/80 dark:border-gold-600/60 shadow-lg space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-1.5">
+                  <RotateCw className="w-4 h-4 text-gold-600" />
+                  <span className="font-black text-xs uppercase tracking-wider text-gold-900 dark:text-gold-300 font-mono">
+                    Mid-Route Disruption Feature
+                  </span>
+                </div>
+                <h4 className="font-bold text-sm text-slate-900 dark:text-white font-display">
+                  What if this shelter's food requirement is fulfilled right now?
+                </h4>
+                <p className="text-xs text-slate-600 dark:text-slate-300">
+                  If another donor fulfills this shelter's capacity while the rider is on the road, ResQRoute's algorithm automatically reroutes the courier to the next nearest shelter.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSimulateFulfillAndReroute}
+                className="px-4 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-600 text-slate-950 font-black text-xs shadow-md hover:scale-105 active:scale-95 transition flex items-center gap-2 shrink-0"
+              >
+                <Zap className="w-4 h-4 text-slate-950" />
+                <span>Simulate Demand Fulfilled (Auto-Reroute)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Interactive Live Movement Controls & Map View */}
+          <div className="mx-6 sm:mx-8 mb-6 p-4 rounded-2xl bg-stonebg-100 dark:bg-obsidian-800 border border-stonebg-200 dark:border-obsidian-700 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <Compass className="w-4 h-4 text-forest-600 animate-spin" />
+              <div>
+                <span className="font-bold text-slate-900 dark:text-white block">
+                  Simulate Live Courier Navigation
+                </span>
+                <span className="text-slate-500 text-[11px]">
+                  Advance the courier closer or verify immediate delivery handover at destination.
+                </span>
               </div>
             </div>
 
-            {/* Interactive Tracking Simulation Controls for Donor / Judge */}
-            <div className="p-4 rounded-2xl bg-white dark:bg-obsidian-800 border border-stonebg-200 dark:border-obsidian-700 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2">
-                <Compass className="w-4 h-4 text-forest-600 animate-spin" />
-                <div>
-                  <span className="font-bold text-slate-900 dark:text-white block">
-                    Interactive Live Movement Simulator
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              {trackedDelivery.status !== 'delivered' ? (
+                <>
+                  <button
+                    onClick={() => stepSimulatedMovement(trackedDelivery.id)}
+                    className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 text-blue-800 dark:text-blue-200 font-bold border border-blue-300 dark:border-blue-800 transition shadow-sm"
+                  >
+                    🚴 Move Courier Closer (+35%)
+                  </button>
+                  <button
+                    onClick={() => completeDelivery(trackedDelivery.id)}
+                    className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-forest-800 hover:bg-forest-900 text-white font-bold transition shadow-sm"
+                  >
+                    🏁 Confirm Shelter Arrival & Handover
+                  </button>
+                </>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1.5 rounded-xl bg-forest-100 dark:bg-forest-950 text-forest-800 dark:text-forest-200 font-bold flex items-center gap-1">
+                    <CheckCircle2 className="w-4 h-4 text-forest-600" />
+                    Delivery Verified at Shelter!
                   </span>
-                  <span className="text-slate-500 text-[11px]">
-                    Step the courier closer to the shelter or simulate instant shelter handover.
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                {trackedDelivery.status !== 'delivered' ? (
-                  <>
-                    <button
-                      onClick={() => stepSimulatedMovement(trackedDelivery.id)}
-                      className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 text-blue-800 dark:text-blue-200 font-bold border border-blue-300 dark:border-blue-800 transition shadow-sm"
-                    >
-                      🚴 Move Courier Closer (+35%)
-                    </button>
-                    <button
-                      onClick={() => completeDelivery(trackedDelivery.id)}
-                      className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-forest-800 hover:bg-forest-900 text-white font-bold transition shadow-sm"
-                    >
-                      🏁 Confirm Arrival & Handover
-                    </button>
-                  </>
-                ) : (
                   <button
                     onClick={() => setActiveReceipt(trackedDonation)}
-                    className="px-4 py-2 rounded-xl bg-forest-800 text-white font-bold transition shadow-sm"
+                    className="px-3 py-1.5 rounded-xl bg-forest-800 text-white font-bold transition shadow-sm"
                   >
-                    View Official Shelter Intake Certificate 📜
+                    View Official Certificate 📜
                   </button>
-                )}
+                </div>
+              )}
 
-                <button
-                  onClick={() => setActiveRole('admin')}
-                  className="px-3 py-2 rounded-xl bg-stonebg-100 hover:bg-stonebg-200 dark:bg-obsidian-700 text-slate-700 dark:text-slate-200 font-semibold"
-                >
-                  View on Full Map ↗
-                </button>
-              </div>
+              <button
+                onClick={() => setActiveRole('admin')}
+                className="px-3 py-2 rounded-xl bg-white dark:bg-obsidian-700 text-slate-700 dark:text-slate-200 font-semibold border border-stonebg-200 dark:border-obsidian-600"
+              >
+                View Operations Map ↗
+              </button>
             </div>
           </div>
-        ) : (
-          <div className="p-8 text-center text-slate-400 space-y-2">
-            <PackageCheck className="w-8 h-8 mx-auto opacity-50" />
-            <p className="text-xs">
-              No delivery currently in transit for this batch. Submit the declaration below to dispatch a courier!
-            </p>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Preset Cards Selector */}
       {activeTab === 'presets' && (
         <div className="space-y-3">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block font-mono">
-            Choose a common donor scenario (or customize below):
+            New Surplus Item? Choose a 1-click preset or declare custom batch:
           </span>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {presets.map(p => {
@@ -470,7 +564,7 @@ export default function DonorDashboard() {
                     <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-forest-100 dark:bg-forest-950 text-forest-900 dark:text-forest-300">
                       {p.badge}
                     </span>
-                    <span className="text-sm font-black text-forest-700 dark:text-forest-400">
+                    <span className="text-sm font-black text-forest-700 dark:text-forest-400 font-display">
                       {p.qty} {p.unit}
                     </span>
                   </div>
@@ -491,7 +585,7 @@ export default function DonorDashboard() {
         </div>
       )}
 
-      {/* Main Grid: Form + Live Safety Evaluation */}
+      {/* Donation Form + Safety Preview */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Form */}
         <div className="lg:col-span-2">
@@ -508,7 +602,6 @@ export default function DonorDashboard() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              {/* Donor Name */}
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Donor / Organization *
@@ -522,7 +615,6 @@ export default function DonorDashboard() {
                 />
               </div>
 
-              {/* Contact */}
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Phone / Coordinator *
@@ -536,7 +628,6 @@ export default function DonorDashboard() {
                 />
               </div>
 
-              {/* Item Name */}
               <div className="sm:col-span-2">
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Food Item Description *
@@ -550,7 +641,6 @@ export default function DonorDashboard() {
                 />
               </div>
 
-              {/* Category */}
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Category *
@@ -568,7 +658,6 @@ export default function DonorDashboard() {
                 </select>
               </div>
 
-              {/* Quantity */}
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Batch Quantity *
@@ -595,7 +684,6 @@ export default function DonorDashboard() {
                 </div>
               </div>
 
-              {/* Prep Time */}
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Prepared (Hours Ago) *
@@ -612,10 +700,9 @@ export default function DonorDashboard() {
                 />
               </div>
 
-              {/* Storage */}
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Holding Temperature Method *
+                  Holding Temperature *
                 </label>
                 <select
                   value={formData.storageMethod}
@@ -630,7 +717,6 @@ export default function DonorDashboard() {
                 </select>
               </div>
 
-              {/* Address */}
               <div className="sm:col-span-2">
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Pickup Facility Address *
@@ -647,7 +733,6 @@ export default function DonorDashboard() {
                 </div>
               </div>
 
-              {/* Confirmation check */}
               <div className="sm:col-span-2">
                 <label className="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300">
                   <input
@@ -666,7 +751,7 @@ export default function DonorDashboard() {
               className="w-full py-3.5 rounded-2xl bg-forest-950 dark:bg-forest-800 hover:bg-forest-900 text-white font-extrabold text-sm shadow-xl shadow-forest-950/20 transition-all flex items-center justify-center gap-2 border border-forest-800"
             >
               <PackageCheck className="w-4 h-4 text-forest-300" />
-              <span>Submit, Dispatch Courier & Start Live Radar</span>
+              <span>Submit & Dispatch Courier Live</span>
             </button>
           </form>
         </div>
@@ -686,24 +771,10 @@ export default function DonorDashboard() {
               </span>
             </div>
 
-            {/* Safety Badge Outcome */}
-            <div
-              className={`p-4 rounded-xl border text-xs space-y-2 ${
-                liveSafetyResult.status === 'ELIGIBLE'
-                  ? 'bg-forest-50 dark:bg-forest-950/60 border-forest-300 dark:border-forest-800 text-forest-950 dark:text-forest-200'
-                  : liveSafetyResult.status === 'REVIEW_REQUIRED'
-                  ? 'bg-gold-50 dark:bg-gold-950/60 border-gold-300 dark:border-gold-800 text-gold-950 dark:text-gold-200'
-                  : 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-950 dark:text-rose-200'
-              }`}
-            >
+            <div className="p-4 rounded-xl border text-xs space-y-2 bg-forest-50 dark:bg-forest-950/60 border-forest-300 dark:border-forest-800 text-forest-950 dark:text-forest-200">
               <div className="flex items-center justify-between">
                 <span className="font-extrabold text-sm flex items-center gap-1.5">
-                  {liveSafetyResult.status === 'ELIGIBLE' && (
-                    <CheckCircle2 className="w-4 h-4 text-forest-600 dark:text-forest-400" />
-                  )}
-                  {liveSafetyResult.status === 'REVIEW_REQUIRED' && (
-                    <AlertTriangle className="w-4 h-4 text-gold-600" />
-                  )}
+                  <CheckCircle2 className="w-4 h-4 text-forest-600 dark:text-forest-400" />
                   {liveSafetyResult.status}
                 </span>
                 <span className="font-mono text-[10px] font-bold opacity-80">
@@ -719,52 +790,13 @@ export default function DonorDashboard() {
               )}
             </div>
 
-            {/* Scientific Transparency */}
             <div className="p-3.5 rounded-xl bg-stonebg-100 dark:bg-obsidian-900 border border-stonebg-200 dark:border-obsidian-800 text-[11px] text-slate-500 dark:text-slate-400 space-y-1">
               <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                 <Info className="w-3.5 h-3.5 text-blue-500" /> Transparent Food Safety Policy
               </span>
               <p className="leading-relaxed">
-                ResQRoute uses transparent microbial holding thresholds. We never certify consumption safety based on arbitrary image guesses or smell. Physical verification is required upon rider pickup.
+                ResQRoute uses transparent microbial holding thresholds. We never certify consumption safety based on arbitrary image guesses. Physical verification is required upon rider pickup.
               </p>
-            </div>
-          </div>
-
-          {/* Active Batches */}
-          <div className="lux-card p-5 space-y-3">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500">
-              Your Registered Batches
-            </h3>
-            <div className="space-y-2 max-h-56 overflow-y-auto">
-              {donations.slice(0, 4).map(d => (
-                <div
-                  key={d.id}
-                  onClick={() => {
-                    setSelectedTrackingDonationId(d.id);
-                    if (d.status === 'ready_for_matching') {
-                      autoDispatchDonation(d.id);
-                    }
-                  }}
-                  className={`p-3 rounded-xl border cursor-pointer transition text-xs space-y-1 ${
-                    selectedTrackingDonationId === d.id
-                      ? 'border-forest-500 bg-forest-50/50 dark:bg-forest-950/40 ring-1 ring-forest-500'
-                      : 'bg-stonebg-50 dark:bg-obsidian-900/60 border-stonebg-200 dark:border-obsidian-700 hover:border-forest-400'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-900 dark:text-white truncate">
-                      {d.itemName}
-                    </span>
-                    <span className="font-black text-forest-700 dark:text-forest-400 shrink-0">
-                      {d.quantity} {d.unit}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-[11px] text-slate-400">
-                    <span className="font-semibold text-slate-600 dark:text-slate-300">{d.status}</span>
-                    <span className="text-forest-600 dark:text-forest-400 font-bold">Track Courier Live →</span>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </div>
@@ -819,12 +851,6 @@ export default function DonorDashboard() {
                 <span className="text-slate-400">Estimated CO2 Prevented:</span>
                 <span className="font-bold text-slate-800 dark:text-slate-200">
                   ~{(activeReceipt.quantity * 2.5).toFixed(1)} kg CO2e
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Safety Rule Clearance:</span>
-                <span className="font-mono text-[10px] text-forest-700 dark:text-forest-300">
-                  {activeReceipt.safetyRule || 'RULE-R04 Checked'}
                 </span>
               </div>
             </div>
