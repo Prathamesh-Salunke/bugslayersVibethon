@@ -19,10 +19,15 @@ import {
   X,
   PackageCheck,
   Info,
+  Zap,
+  ArrowRight,
+  Sliders,
 } from 'lucide-react';
 
 export default function DonorDashboard() {
   const { createDonation, donations, userLocation } = useApp();
+
+  const [activeTab, setActiveTab] = useState('presets'); // 'presets' | 'custom'
 
   // Form State
   const [formData, setFormData] = useState({
@@ -57,66 +62,64 @@ export default function DonorDashboard() {
     verifiedUseByHoursRemaining: 4,
   });
 
-  // Quick Preset Handlers
-  const applyPreset = presetType => {
-    if (presetType === 'wedding') {
-      setFormData({
-        donorName: 'Royal Palace Banquet',
-        donorContact: '+91 98201 12345',
-        itemName: 'Wedding Buffet: Rice, Gravy & Paneer',
-        category: FOOD_CATEGORIES.COOKED_MEAL,
-        cookedOrPackaged: 'Cooked',
-        quantity: 140,
-        unit: 'meals',
-        isVegetarian: true,
-        prepTimeHoursAgo: 1.5,
-        storageMethod: STORAGE_METHODS.HOT_HOLD,
-        packagingType: 'Insulated Metal Chafing Dishes',
-        hasStorageHistory: true,
-        needsCooking: false,
-        address: 'Royal Palace Banquet, Link Road',
-        pickupReadiness: 'Ready for loading',
-        notes: 'Excess banquet buffet',
-      });
-    } else if (presetType === 'bakery') {
-      setFormData({
-        donorName: 'Artisan Sourdough Co.',
-        donorContact: '+91 98202 54321',
-        itemName: 'Assorted Loaves & Rolls',
-        category: FOOD_CATEGORIES.BAKERY,
-        cookedOrPackaged: 'Packaged',
-        quantity: 35,
-        unit: 'loaves',
-        isVegetarian: true,
-        prepTimeHoursAgo: 4,
-        storageMethod: STORAGE_METHODS.ROOM_TEMP,
-        packagingType: 'Paper Bags',
-        hasStorageHistory: true,
-        needsCooking: false,
-        address: 'Bakehouse 12, Hill Road',
-        pickupReadiness: 'Boxed at front counter',
-        notes: 'Freshly baked today',
-      });
-    } else if (presetType === 'mess') {
-      setFormData({
-        donorName: 'Engineering Hostel Mess',
-        donorContact: '+91 98203 98765',
-        itemName: 'Lunch Trays (Rice & Veggies)',
-        category: FOOD_CATEGORIES.COOKED_MEAL,
-        cookedOrPackaged: 'Cooked',
-        quantity: 50,
-        unit: 'meals',
-        isVegetarian: true,
-        prepTimeHoursAgo: 2,
-        storageMethod: STORAGE_METHODS.REFRIGERATED,
-        packagingType: 'Sealed Trays',
-        hasStorageHistory: true,
-        needsCooking: false,
-        address: 'Campus Hostel 3 Mess',
-        pickupReadiness: 'Chilled in walk-in fridge',
-        notes: 'Prepared for lunch service',
-      });
-    }
+  const presets = [
+    {
+      id: 'wedding',
+      badge: 'BANQUET',
+      title: 'Wedding Feast & Catering Surplus',
+      desc: 'Cooked rice, vegetable curry & paneer in thermal chafing dishes.',
+      qty: 140,
+      unit: 'meals',
+      prepAgo: 1.5,
+      storage: STORAGE_METHODS.HOT_HOLD,
+      donor: 'Grand Palace Ballroom',
+      category: FOOD_CATEGORIES.COOKED_MEAL,
+    },
+    {
+      id: 'bakery',
+      badge: 'BAKERY',
+      title: 'Artisan Bakery Day Surplus',
+      desc: 'Freshly baked sourdough, baguettes, and croissants in paper bags.',
+      qty: 40,
+      unit: 'loaves',
+      prepAgo: 3.0,
+      storage: STORAGE_METHODS.ROOM_TEMP,
+      donor: 'Golden Crust Bakehouse',
+      category: FOOD_CATEGORIES.BAKERY,
+    },
+    {
+      id: 'mess',
+      badge: 'HOSTEL MESS',
+      title: 'University Mess Lunch Trays',
+      desc: 'Nutritious lunch trays (rice, lentils, seasonal greens), chilled.',
+      qty: 60,
+      unit: 'meals',
+      prepAgo: 2.0,
+      storage: STORAGE_METHODS.REFRIGERATED,
+      donor: 'Metro Campus Dining Hall',
+      category: FOOD_CATEGORIES.COOKED_MEAL,
+    },
+  ];
+
+  const applyAndSelectPreset = preset => {
+    setFormData({
+      donorName: preset.donor,
+      donorContact: '+91 98200 44321',
+      itemName: preset.title,
+      category: preset.category,
+      cookedOrPackaged: preset.category === FOOD_CATEGORIES.BAKERY ? 'Packaged' : 'Cooked',
+      quantity: preset.qty,
+      unit: preset.unit,
+      isVegetarian: true,
+      prepTimeHoursAgo: preset.prepAgo,
+      storageMethod: preset.storage,
+      packagingType: 'Sanitary Food-Grade Containers',
+      hasStorageHistory: true,
+      needsCooking: false,
+      address: `${preset.donor}, Metro West Sector`,
+      pickupReadiness: 'Ready for Immediate Dispatch',
+      notes: preset.desc,
+    });
   };
 
   const handleSubmit = e => {
@@ -138,116 +141,161 @@ export default function DonorDashboard() {
 
   return (
     <div className="space-y-8 pb-16">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
-          Food Donor Coordination Hub
-        </h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Declare surplus food with transparent microbial holding checks and automated recipient matching.
-        </p>
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-black text-slate-900 dark:text-white font-display">
+              Food Donor Coordination Hub
+            </h1>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-forest-100 text-forest-800 dark:bg-forest-950 dark:text-forest-300 border border-forest-200 dark:border-forest-800">
+              Verified Intake
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Declare surplus food with transparent microbial safety checks and automated courier allocation.
+          </p>
+        </div>
+
+        {/* Tab Toggle */}
+        <div className="flex items-center bg-stonebg-100 dark:bg-obsidian-900 p-1 rounded-2xl border border-stonebg-200 dark:border-obsidian-700 self-start sm:self-auto">
+          <button
+            onClick={() => setActiveTab('presets')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+              activeTab === 'presets'
+                ? 'bg-white dark:bg-obsidian-800 text-forest-950 dark:text-forest-200 shadow-sm'
+                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Zap className="w-3.5 h-3.5 text-forest-600 dark:text-forest-400" />
+            <span>1-Click Presets</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('custom')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+              activeTab === 'custom'
+                ? 'bg-white dark:bg-obsidian-800 text-forest-950 dark:text-forest-200 shadow-sm'
+                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Sliders className="w-3.5 h-3.5 text-forest-600 dark:text-forest-400" />
+            <span>Custom Form</span>
+          </button>
+        </div>
       </div>
 
-      {/* Quick Fill Presets */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-emerald-600" />
-          <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-            Quick 1-Click Demo Presets:
+      {/* Preset Cards Selector */}
+      {activeTab === 'presets' && (
+        <div className="space-y-3">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+            Choose a common donor scenario (or customize below):
           </span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {presets.map(p => {
+              const isSelected = formData.itemName === p.title;
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => applyAndSelectPreset(p)}
+                  className={`lux-card p-5 cursor-pointer relative group transition-all ${
+                    isSelected
+                      ? 'border-forest-500 ring-2 ring-forest-500/20 bg-forest-50/40 dark:bg-forest-950/20'
+                      : 'hover:border-stonebg-300 dark:hover:border-obsidian-600'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-forest-100 dark:bg-forest-950 text-forest-900 dark:text-forest-300">
+                      {p.badge}
+                    </span>
+                    <span className="text-sm font-black text-forest-700 dark:text-forest-400">
+                      {p.qty} {p.unit}
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                    {p.title}
+                  </h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                    {p.desc}
+                  </p>
+                  <div className="pt-3 flex items-center justify-between text-xs font-semibold text-forest-700 dark:text-forest-400">
+                    <span>{isSelected ? '✓ Selected' : 'Click to Load'}</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => applyPreset('wedding')}
-            className="px-3 py-1.5 rounded-xl bg-warm-100 hover:bg-warm-200 dark:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 transition"
-          >
-            🍛 Wedding Feast (140 Meals)
-          </button>
-          <button
-            type="button"
-            onClick={() => applyPreset('bakery')}
-            className="px-3 py-1.5 rounded-xl bg-warm-100 hover:bg-warm-200 dark:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 transition"
-          >
-            🥖 Bakery Surplus (35 Loaves)
-          </button>
-          <button
-            type="button"
-            onClick={() => applyPreset('mess')}
-            className="px-3 py-1.5 rounded-xl bg-warm-100 hover:bg-warm-200 dark:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 transition"
-          >
-            🏫 Hostel Mess (50 Meals)
-          </button>
-        </div>
-      </div>
+      )}
 
+      {/* Main Grid: Form + Live Safety Evaluation */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Guided Form */}
+        {/* Left 2 Cols: Form */}
         <div className="lg:col-span-2">
           <form
             onSubmit={handleSubmit}
-            className="p-6 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm space-y-6"
+            className="lux-card p-6 sm:p-7 space-y-6"
           >
-            <div className="border-b border-warm-200 dark:border-slate-700 pb-3 flex items-center justify-between">
+            <div className="border-b border-stonebg-200 dark:border-obsidian-700 pb-3 flex items-center justify-between">
               <h2 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
-                <UtensilsCrossed className="w-5 h-5 text-emerald-600" />
-                <span>Surplus Item Declaration Form</span>
+                <UtensilsCrossed className="w-5 h-5 text-forest-600 dark:text-forest-400" />
+                <span>Donation Batch Declaration</span>
               </h2>
-              <span className="text-[11px] text-slate-400">* Required for safety audit</span>
+              <span className="text-[11px] text-slate-400 font-mono">* Safety Certified</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               {/* Donor Name */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Donor / Organization Name *
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Donor / Organization *
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.donorName}
                   onChange={e => setFormData({ ...formData, donorName: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl text-xs border border-warm-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 rounded-xl border border-stonebg-300 dark:border-obsidian-700 bg-white dark:bg-obsidian-900 focus:outline-none focus:ring-2 focus:ring-forest-500"
                 />
               </div>
 
               {/* Contact */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Contact Phone / Coordinator *
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Phone / Coordinator *
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.donorContact}
                   onChange={e => setFormData({ ...formData, donorContact: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl text-xs border border-warm-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 rounded-xl border border-stonebg-300 dark:border-obsidian-700 bg-white dark:bg-obsidian-900 focus:outline-none focus:ring-2 focus:ring-forest-500"
                 />
               </div>
 
               {/* Item Name */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Food / Aid Item Description *
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Food Item Description *
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.itemName}
                   onChange={e => setFormData({ ...formData, itemName: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl text-xs border border-warm-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 rounded-xl border border-stonebg-300 dark:border-obsidian-700 bg-white dark:bg-obsidian-900 focus:outline-none focus:ring-2 focus:ring-forest-500"
                 />
               </div>
 
-              {/* Food Category */}
+              {/* Category */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Food Category *
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Category *
                 </label>
                 <select
                   value={formData.category}
                   onChange={e => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl text-xs border border-warm-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 rounded-xl border border-stonebg-300 dark:border-obsidian-700 bg-white dark:bg-obsidian-900 focus:outline-none focus:ring-2 focus:ring-forest-500"
                 >
                   {Object.values(FOOD_CATEGORIES).map(cat => (
                     <option key={cat} value={cat}>
@@ -257,40 +305,9 @@ export default function DonorDashboard() {
                 </select>
               </div>
 
-              {/* Cooked or Packaged */}
+              {/* Quantity */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Preparation Classification *
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, cookedOrPackaged: 'Cooked' })}
-                    className={`py-2 rounded-xl text-xs font-semibold border transition ${
-                      formData.cookedOrPackaged === 'Cooked'
-                        ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-500 text-emerald-800 dark:text-emerald-300'
-                        : 'border-warm-200 dark:border-slate-700 text-slate-600'
-                    }`}
-                  >
-                    Cooked Meal
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, cookedOrPackaged: 'Packaged' })}
-                    className={`py-2 rounded-xl text-xs font-semibold border transition ${
-                      formData.cookedOrPackaged === 'Packaged'
-                        ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-500 text-emerald-800 dark:text-emerald-300'
-                        : 'border-warm-200 dark:border-slate-700 text-slate-600'
-                    }`}
-                  >
-                    Packaged / Bakery
-                  </button>
-                </div>
-              </div>
-
-              {/* Quantity & Unit */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Batch Quantity *
                 </label>
                 <div className="flex gap-2">
@@ -300,12 +317,12 @@ export default function DonorDashboard() {
                     required
                     value={formData.quantity}
                     onChange={e => setFormData({ ...formData, quantity: e.target.value })}
-                    className="w-2/3 px-3 py-2 rounded-xl text-xs border border-warm-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-2/3 px-3 py-2 rounded-xl border border-stonebg-300 dark:border-obsidian-700 bg-white dark:bg-obsidian-900 focus:outline-none focus:ring-2 focus:ring-forest-500 font-bold"
                   />
                   <select
                     value={formData.unit}
                     onChange={e => setFormData({ ...formData, unit: e.target.value })}
-                    className="w-1/3 px-2 py-2 rounded-xl text-xs border border-warm-300 dark:border-slate-600 bg-white dark:bg-slate-900"
+                    className="w-1/3 px-2 py-2 rounded-xl border border-stonebg-300 dark:border-obsidian-700 bg-white dark:bg-obsidian-900"
                   >
                     <option value="meals">meals</option>
                     <option value="kg">kg</option>
@@ -315,41 +332,10 @@ export default function DonorDashboard() {
                 </div>
               </div>
 
-              {/* Vegetarian */}
+              {/* Prep Time */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Dietary Classification
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, isVegetarian: true })}
-                    className={`py-2 rounded-xl text-xs font-semibold border transition ${
-                      formData.isVegetarian
-                        ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-500 text-emerald-800 dark:text-emerald-300'
-                        : 'border-warm-200 dark:border-slate-700 text-slate-600'
-                    }`}
-                  >
-                    🌱 100% Vegetarian
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, isVegetarian: false })}
-                    className={`py-2 rounded-xl text-xs font-semibold border transition ${
-                      !formData.isVegetarian
-                        ? 'bg-amber-50 dark:bg-amber-950 border-amber-500 text-amber-800 dark:text-amber-300'
-                        : 'border-warm-200 dark:border-slate-700 text-slate-600'
-                    }`}
-                  >
-                    🍗 Contains Meat/Egg
-                  </button>
-                </div>
-              </div>
-
-              {/* Prep Time Ago */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Preparation Time (Hours Ago) *
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Prepared (Hours Ago) *
                 </label>
                 <input
                   type="number"
@@ -359,19 +345,19 @@ export default function DonorDashboard() {
                   required
                   value={formData.prepTimeHoursAgo}
                   onChange={e => setFormData({ ...formData, prepTimeHoursAgo: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl text-xs border border-warm-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 rounded-xl border border-stonebg-300 dark:border-obsidian-700 bg-white dark:bg-obsidian-900 focus:outline-none focus:ring-2 focus:ring-forest-500"
                 />
               </div>
 
-              {/* Storage Method */}
+              {/* Storage */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Active Storage Method *
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Holding Temperature Method *
                 </label>
                 <select
                   value={formData.storageMethod}
                   onChange={e => setFormData({ ...formData, storageMethod: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl text-xs border border-warm-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 rounded-xl border border-stonebg-300 dark:border-obsidian-700 bg-white dark:bg-obsidian-900 focus:outline-none focus:ring-2 focus:ring-forest-500"
                 >
                   {Object.values(STORAGE_METHODS).map(sm => (
                     <option key={sm} value={sm}>
@@ -381,9 +367,9 @@ export default function DonorDashboard() {
                 </select>
               </div>
 
-              {/* Pickup Address */}
+              {/* Address */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Pickup Facility Address *
                 </label>
                 <div className="relative">
@@ -393,30 +379,30 @@ export default function DonorDashboard() {
                     required
                     value={formData.address}
                     onChange={e => setFormData({ ...formData, address: e.target.value })}
-                    className="w-full pl-9 pr-3 py-2 rounded-xl text-xs border border-warm-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-stonebg-300 dark:border-obsidian-700 bg-white dark:bg-obsidian-900 focus:outline-none focus:ring-2 focus:ring-forest-500"
                   />
                 </div>
               </div>
 
-              {/* Readiness & Checkboxes */}
-              <div className="sm:col-span-2 space-y-2">
-                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-700 dark:text-slate-300">
+              {/* Confirmation check */}
+              <div className="sm:col-span-2">
+                <label className="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300">
                   <input
                     type="checkbox"
                     checked={formData.hasStorageHistory}
                     onChange={e => setFormData({ ...formData, hasStorageHistory: e.target.checked })}
-                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
+                    className="w-4 h-4 rounded text-forest-600 focus:ring-forest-500"
                   />
-                  <span>I confirm continuous temperature monitoring history is logged.</span>
+                  <span>I certify food was prepared in sanitary conditions and temperature logged.</span>
                 </label>
               </div>
             </div>
 
             <button
               type="submit"
-              className="w-full py-3.5 rounded-xl bg-forest-900 hover:bg-forest-800 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
+              className="w-full py-3.5 rounded-2xl bg-forest-950 dark:bg-forest-800 hover:bg-forest-900 text-white font-extrabold text-sm shadow-xl shadow-forest-950/20 transition-all flex items-center justify-center gap-2 border border-forest-800"
             >
-              <PackageCheck className="w-4 h-4 text-emerald-400" />
+              <PackageCheck className="w-4 h-4 text-forest-300" />
               <span>Submit & Dispatch to AI Matching Grid</span>
             </button>
           </form>
@@ -424,16 +410,16 @@ export default function DonorDashboard() {
 
         {/* Right 1 Col: Real-Time Safety Engine Evaluation Preview */}
         <div className="space-y-4">
-          <div className="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
+          <div className="lux-card p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-stonebg-200 dark:border-obsidian-700 pb-3">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                <ShieldCheck className="w-5 h-5 text-forest-600 dark:text-forest-400" />
                 <h3 className="font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-white">
                   Live Safety Evaluation Engine
                 </h3>
               </div>
-              <span className="text-[10px] font-mono bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-slate-500">
-                Rule Engine R-0
+              <span className="text-[10px] font-mono bg-stonebg-100 dark:bg-obsidian-800 px-1.5 py-0.5 rounded text-slate-500">
+                Rule R-0
               </span>
             </div>
 
@@ -441,19 +427,19 @@ export default function DonorDashboard() {
             <div
               className={`p-4 rounded-xl border text-xs space-y-2 ${
                 liveSafetyResult.status === 'ELIGIBLE'
-                  ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-950 dark:text-emerald-200'
+                  ? 'bg-forest-50 dark:bg-forest-950/60 border-forest-300 dark:border-forest-800 text-forest-950 dark:text-forest-200'
                   : liveSafetyResult.status === 'REVIEW_REQUIRED'
-                  ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-200'
+                  ? 'bg-gold-50 dark:bg-gold-950/60 border-gold-300 dark:border-gold-800 text-gold-950 dark:text-gold-200'
                   : 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-950 dark:text-rose-200'
               }`}
             >
               <div className="flex items-center justify-between">
                 <span className="font-extrabold text-sm flex items-center gap-1.5">
                   {liveSafetyResult.status === 'ELIGIBLE' && (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <CheckCircle2 className="w-4 h-4 text-forest-600 dark:text-forest-400" />
                   )}
                   {liveSafetyResult.status === 'REVIEW_REQUIRED' && (
-                    <AlertTriangle className="w-4 h-4 text-amber-600" />
+                    <AlertTriangle className="w-4 h-4 text-gold-600" />
                   )}
                   {liveSafetyResult.status}
                 </span>
@@ -470,10 +456,10 @@ export default function DonorDashboard() {
               )}
             </div>
 
-            {/* Honest Scientific Disclaimer */}
-            <div className="p-3 rounded-xl bg-warm-100 dark:bg-slate-900 border border-warm-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 space-y-1">
+            {/* Scientific Transparency */}
+            <div className="p-3.5 rounded-xl bg-stonebg-100 dark:bg-obsidian-900 border border-stonebg-200 dark:border-obsidian-800 text-[11px] text-slate-500 dark:text-slate-400 space-y-1">
               <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <Info className="w-3.5 h-3.5 text-blue-500" /> Algorithmic Safety Transparency
+                <Info className="w-3.5 h-3.5 text-blue-500" /> Transparent Food Safety Policy
               </span>
               <p className="leading-relaxed">
                 ResQRoute uses transparent microbial holding thresholds. We never certify consumption safety based on arbitrary image guesses or smell. Physical verification is required upon rider pickup.
@@ -481,29 +467,29 @@ export default function DonorDashboard() {
             </div>
           </div>
 
-          {/* Recent Donor Submissions */}
-          <div className="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm space-y-3">
+          {/* Active Batches */}
+          <div className="lux-card p-5 space-y-3">
             <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500">
-              Your Active Batches
+              Your Registered Batches
             </h3>
-            <div className="space-y-2 max-h-60 overflow-y-auto">
+            <div className="space-y-2 max-h-56 overflow-y-auto">
               {donations.slice(0, 3).map(d => (
                 <div
                   key={d.id}
                   onClick={() => setActiveReceipt(d)}
-                  className="p-3 rounded-xl bg-warm-50 dark:bg-slate-900/40 border border-warm-200 dark:border-slate-700/60 hover:border-emerald-500 cursor-pointer transition text-xs space-y-1"
+                  className="p-3 rounded-xl bg-stonebg-50 dark:bg-obsidian-900/60 border border-stonebg-200 dark:border-obsidian-700 hover:border-forest-500 cursor-pointer transition text-xs space-y-1"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-800 dark:text-white truncate">
+                    <span className="font-bold text-slate-900 dark:text-white truncate">
                       {d.itemName}
                     </span>
-                    <span className="font-black text-emerald-600 shrink-0">
+                    <span className="font-black text-forest-700 dark:text-forest-400 shrink-0">
                       {d.quantity} {d.unit}
                     </span>
                   </div>
                   <div className="flex justify-between text-[11px] text-slate-400">
                     <span>{d.status}</span>
-                    <span className="text-emerald-600 font-semibold">View Certificate →</span>
+                    <span className="text-forest-600 dark:text-forest-400 font-semibold">View Certificate →</span>
                   </div>
                 </div>
               ))}
@@ -514,8 +500,8 @@ export default function DonorDashboard() {
 
       {/* Impact Certificate Modal */}
       {activeReceipt && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-3xl p-6 border border-warm-200 dark:border-slate-800 shadow-2xl space-y-5 relative">
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="max-w-md w-full bg-white dark:bg-obsidian-900 rounded-3xl p-6 border border-stonebg-200 dark:border-obsidian-800 shadow-2xl space-y-5 relative">
             <button
               onClick={() => setActiveReceipt(null)}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1"
@@ -524,13 +510,13 @@ export default function DonorDashboard() {
             </button>
 
             <div className="text-center space-y-2 pt-2">
-              <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-forest-800 to-emerald-500 flex items-center justify-center text-white shadow-lg">
-                <Award className="w-8 h-8 text-emerald-200" />
+              <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-forest-900 to-forest-600 flex items-center justify-center text-white shadow-xl shadow-forest-900/20">
+                <Award className="w-8 h-8 text-forest-200" />
               </div>
-              <span className="text-[10px] font-mono tracking-widest uppercase font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-mono tracking-widest uppercase font-bold text-forest-700 bg-forest-50 dark:bg-forest-950 px-2.5 py-0.5 rounded-full">
                 Verified Food Rescue Certificate
               </span>
-              <h3 className="text-lg font-black text-slate-900 dark:text-white">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white font-display">
                 {activeReceipt.itemName}
               </h3>
               <p className="text-xs text-slate-500">
@@ -538,7 +524,7 @@ export default function DonorDashboard() {
               </p>
             </div>
 
-            <div className="bg-warm-50 dark:bg-slate-800 p-4 rounded-2xl border border-warm-200 dark:border-slate-700 text-xs space-y-2.5">
+            <div className="bg-stonebg-50 dark:bg-obsidian-800 p-4 rounded-2xl border border-stonebg-200 dark:border-obsidian-700 text-xs space-y-2.5">
               <div className="flex justify-between">
                 <span className="text-slate-400">Batch Identifier:</span>
                 <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
@@ -553,7 +539,7 @@ export default function DonorDashboard() {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Quantity Saved:</span>
-                <span className="font-extrabold text-emerald-600">
+                <span className="font-extrabold text-forest-600 dark:text-forest-400">
                   {activeReceipt.quantity} {activeReceipt.unit}
                 </span>
               </div>
@@ -565,7 +551,7 @@ export default function DonorDashboard() {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Safety Rule Clearance:</span>
-                <span className="font-mono text-[10px] text-emerald-700 dark:text-emerald-300">
+                <span className="font-mono text-[10px] text-forest-700 dark:text-forest-300">
                   {activeReceipt.safetyRule || 'RULE-R04 Checked'}
                 </span>
               </div>
@@ -583,7 +569,7 @@ export default function DonorDashboard() {
               </button>
               <button
                 onClick={() => setActiveReceipt(null)}
-                className="px-4 py-2.5 rounded-xl bg-warm-100 hover:bg-warm-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs"
+                className="px-4 py-2.5 rounded-xl bg-stonebg-100 hover:bg-stonebg-200 dark:bg-obsidian-800 text-slate-700 dark:text-slate-300 font-semibold text-xs"
               >
                 Close
               </button>

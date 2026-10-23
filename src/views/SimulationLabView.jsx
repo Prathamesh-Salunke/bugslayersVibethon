@@ -24,6 +24,7 @@ import {
   Info,
   ChevronRight,
   Check,
+  Terminal,
 } from 'lucide-react';
 
 export default function SimulationLabView() {
@@ -46,7 +47,6 @@ export default function SimulationLabView() {
   const [activeScenarioId, setActiveScenarioId] = useState(1);
   const [executionLog, setExecutionLog] = useState(null);
 
-  // Scenarios Definition
   const scenarios = [
     {
       id: 1,
@@ -99,7 +99,6 @@ export default function SimulationLabView() {
     },
   ];
 
-  // Execution Handlers for Each Scenario
   const runScenario1 = () => {
     const donationQty = 180;
     const splitResult = calculateMultiRiderSplit(donationQty, riders);
@@ -125,7 +124,6 @@ export default function SimulationLabView() {
 
   const runScenario2 = () => {
     const reservation = createReservation('DON-101', 'rider-1', 'shelter-1', 40);
-    // Simulate immediate timeout trigger
     triggerGhostTimeout(reservation.id);
 
     setExecutionLog({
@@ -147,7 +145,6 @@ export default function SimulationLabView() {
   };
 
   const runScenario3 = () => {
-    // Delivery DEL-8801 heading to shelter-1
     const plans = triggerShelterEmergencyClose('shelter-1', 'Power failure & cooling compressor trip');
     const rescue = plans && plans[0] ? plans[0].rescueEval : null;
 
@@ -215,7 +212,6 @@ export default function SimulationLabView() {
       isVegetarian: true,
     };
 
-    // Test against Westside Night Relief Camp which has refrigeration: false!
     const westsideShelter = shelters.find(s => s.id === 'shelter-3');
     const compResult = checkShelterCompatibility(chilledDairyDonation, westsideShelter);
 
@@ -300,30 +296,30 @@ export default function SimulationLabView() {
   return (
     <div className="space-y-6 pb-16">
       {/* Top Banner */}
-      <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-500 via-emerald-600 to-forest-900 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-950/30 text-amber-200 text-xs font-mono font-bold">
-            <FlaskConical className="w-4 h-4" />
+      <div className="p-8 rounded-3xl bg-gradient-to-r from-forest-950 via-forest-900 to-obsidian-950 text-white shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-6 border border-forest-800">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-forest-500/20 text-forest-300 text-xs font-mono font-bold border border-forest-500/30">
+            <FlaskConical className="w-4 h-4 text-forest-300" />
             <span>HACKATHON EVALUATION SUITE</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black">
+          <h1 className="text-2xl sm:text-3xl font-black font-display">
             Judge Innovation & Stress-Test Lab
           </h1>
-          <p className="text-xs sm:text-sm text-emerald-100 max-w-2xl leading-relaxed">
+          <p className="text-xs sm:text-sm text-forest-100/80 max-w-2xl leading-relaxed">
             Test the 7 core innovation scenarios in real-time. Inspect the step-by-step algorithmic decision process, before/after allocations, and verified audit logs.
           </p>
         </div>
 
         <button
           onClick={resetToInitialData}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-slate-950 font-extrabold text-xs shadow-md hover:bg-warm-100 transition self-start sm:self-auto shrink-0"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-slate-950 font-extrabold text-xs shadow-lg hover:bg-stonebg-100 transition self-start sm:self-auto shrink-0"
         >
           <RotateCcw className="w-4 h-4 text-rose-600" />
           <span>Reset Demo Grid</span>
         </button>
       </div>
 
-      {/* Scenario Selector Tabs */}
+      {/* Scenario Selector Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {scenarios.map(s => {
           const isSelected = activeScenarioId === s.id;
@@ -334,17 +330,17 @@ export default function SimulationLabView() {
                 setActiveScenarioId(s.id);
                 setExecutionLog(null);
               }}
-              className={`p-4 rounded-2xl border cursor-pointer transition-all shadow-sm ${
+              className={`lux-card p-4 cursor-pointer transition-all ${
                 isSelected
-                  ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-500 ring-2 ring-amber-500/30'
-                  : 'bg-white dark:bg-slate-800 border-warm-200 dark:border-slate-700 hover:border-warm-300'
+                  ? 'border-gold-500 ring-2 ring-gold-500/30 bg-gold-50/40 dark:bg-gold-950/20'
+                  : 'hover:border-stonebg-300 dark:hover:border-obsidian-600'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-stonebg-100 dark:bg-obsidian-800 text-slate-600 dark:text-slate-300">
                   {s.tag}
                 </span>
-                <span className="text-xs font-black text-amber-600">#{s.id}</span>
+                <span className="text-xs font-black text-gold-600">#{s.id}</span>
               </div>
               <h4 className="font-bold text-xs text-slate-900 dark:text-white leading-snug">
                 {s.title}
@@ -361,13 +357,13 @@ export default function SimulationLabView() {
       {(() => {
         const currentScenario = scenarios.find(s => s.id === activeScenarioId);
         return (
-          <div className="p-6 rounded-3xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-md space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-warm-200 dark:border-slate-700 pb-4">
+          <div className="lux-card p-6 sm:p-8 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stonebg-200 dark:border-obsidian-700 pb-4">
               <div>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-amber-600 font-bold block">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-gold-600 font-bold block">
                   SELECTED EVALUATION STRESS TEST
                 </span>
-                <h2 className="text-xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+                <h2 className="text-xl font-extrabold text-slate-900 dark:text-white mt-0.5 font-display">
                   {currentScenario.title}
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">{currentScenario.summary}</p>
@@ -375,16 +371,16 @@ export default function SimulationLabView() {
 
               <button
                 onClick={() => triggerActiveScenario(activeScenarioId)}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-sm shadow-md hover:scale-[1.02] active:scale-[0.98] transition self-start sm:self-auto"
+                className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gold-500 hover:bg-gold-600 text-slate-950 font-black text-sm shadow-xl shadow-gold-500/20 hover:scale-[1.02] active:scale-[0.98] transition self-start sm:self-auto"
               >
                 <Zap className="w-4 h-4 text-slate-950" />
                 <span>Simulate & Run Scenario #{activeScenarioId}</span>
               </button>
             </div>
 
-            {/* Initial Baseline Condition */}
-            <div className="p-4 rounded-xl bg-warm-50 dark:bg-slate-900/60 border border-warm-200 dark:border-slate-700 text-xs space-y-1">
-              <span className="font-bold text-slate-400 uppercase tracking-widest text-[10px] block">
+            {/* Baseline Condition */}
+            <div className="p-4 rounded-2xl bg-stonebg-50 dark:bg-obsidian-900/60 border border-stonebg-200 dark:border-obsidian-700 text-xs space-y-1">
+              <span className="font-bold text-slate-400 uppercase tracking-widest text-[10px] font-mono block">
                 Initial Condition Before Trigger:
               </span>
               <p className="font-semibold text-slate-800 dark:text-slate-200">
@@ -396,47 +392,48 @@ export default function SimulationLabView() {
             {executionLog && executionLog.scenarioId === activeScenarioId ? (
               <div className="space-y-5 animate-slide-up">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  <h3 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2 font-display">
+                    <Terminal className="w-5 h-5 text-forest-600 dark:text-forest-400" />
                     <span>Algorithmic Execution Trace</span>
                   </h3>
-                  <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                  <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-forest-100 text-forest-900 dark:bg-forest-950 dark:text-forest-300 border border-forest-200 dark:border-forest-800">
                     {executionLog.status}
                   </span>
                 </div>
 
-                {/* Steps */}
-                <div className="space-y-2 bg-slate-900 text-emerald-400 p-4 rounded-2xl font-mono text-xs border border-slate-800 shadow-inner">
+                {/* Steps Terminal */}
+                <div className="space-y-2.5 bg-obsidian-950 text-emerald-400 p-5 rounded-2xl font-mono text-xs border border-obsidian-800 shadow-inner">
                   {executionLog.steps.map((step, idx) => (
-                    <div key={idx} className="leading-relaxed">
-                      {step}
+                    <div key={idx} className="leading-relaxed flex items-start gap-2">
+                      <span className="text-forest-600 select-none">❯</span>
+                      <span>{step}</span>
                     </div>
                   ))}
                 </div>
 
                 {/* Before vs After Comparison Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                  <div className="p-4 rounded-xl bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 space-y-1.5">
-                    <span className="text-[10px] font-bold text-rose-600 uppercase tracking-wider block">
+                  <div className="p-4 rounded-2xl bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 space-y-1.5">
+                    <span className="text-[10px] font-bold text-rose-600 uppercase tracking-wider font-mono block">
                       Before Recovery (Failure State)
                     </span>
-                    <p className="text-rose-950 dark:text-rose-200 font-medium">
+                    <p className="text-rose-950 dark:text-rose-200 font-semibold leading-relaxed">
                       {executionLog.before}
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 space-y-1.5">
-                    <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider block">
+                  <div className="p-4 rounded-2xl bg-forest-50/70 dark:bg-forest-950/30 border border-forest-200 dark:border-forest-900/40 space-y-1.5">
+                    <span className="text-[10px] font-bold text-forest-700 dark:text-forest-400 uppercase tracking-wider font-mono block">
                       After ResQRoute AI Intervention
                     </span>
-                    <p className="text-emerald-950 dark:text-emerald-200 font-medium">
+                    <p className="text-forest-950 dark:text-forest-200 font-semibold leading-relaxed">
                       {executionLog.after}
                     </p>
                   </div>
                 </div>
 
                 {/* Algorithmic Rationale Box */}
-                <div className="p-4 rounded-xl bg-warm-100 dark:bg-slate-900 border border-warm-200 dark:border-slate-800 text-xs space-y-1">
+                <div className="p-4 rounded-2xl bg-stonebg-100 dark:bg-obsidian-900 border border-stonebg-200 dark:border-obsidian-800 text-xs space-y-1">
                   <span className="font-bold text-slate-700 dark:text-slate-300 block">
                     Transparent Rationale:
                   </span>
@@ -446,8 +443,8 @@ export default function SimulationLabView() {
                 </div>
               </div>
             ) : (
-              <div className="p-8 text-center rounded-2xl bg-warm-50 dark:bg-slate-900/40 border border-dashed border-warm-200 dark:border-slate-700 text-slate-400 text-xs space-y-2">
-                <Zap className="w-8 h-8 text-amber-500 mx-auto opacity-70" />
+              <div className="p-8 text-center rounded-2xl bg-stonebg-50 dark:bg-obsidian-900/40 border border-dashed border-stonebg-200 dark:border-obsidian-700 text-slate-400 text-xs space-y-2">
+                <Zap className="w-8 h-8 text-gold-500 mx-auto opacity-70" />
                 <p>Click "Simulate & Run Scenario #{activeScenarioId}" above to trigger this event live.</p>
               </div>
             )}

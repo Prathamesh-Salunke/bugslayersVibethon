@@ -42,10 +42,10 @@ export default function HistoryDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
+            <h1 className="text-2xl font-black text-slate-900 dark:text-white font-display">
               Permanent Audit & Operations History
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-stonebg-200 dark:bg-obsidian-800 text-slate-800 dark:text-slate-200 border border-stonebg-300 dark:border-obsidian-700">
               Immutable Trail
             </span>
           </div>
@@ -56,15 +56,15 @@ export default function HistoryDashboard() {
 
         <button
           onClick={handleExport}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-forest-900 hover:bg-forest-800 text-white font-bold text-xs shadow-md transition self-start sm:self-auto"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-forest-950 dark:bg-forest-800 hover:bg-forest-900 text-white font-bold text-xs shadow-md transition self-start sm:self-auto border border-forest-800"
         >
-          <Download className="w-4 h-4 text-emerald-400" />
+          <Download className="w-4 h-4 text-forest-300" />
           <span>Export Filtered Audit Log (.CSV)</span>
         </button>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="lux-card p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
         {/* Search Input */}
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -73,7 +73,7 @@ export default function HistoryDashboard() {
             placeholder="Search action, actor, target or reason..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl text-xs border border-warm-300 dark:border-slate-600 bg-warm-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full pl-9 pr-3 py-2 rounded-xl text-xs border border-stonebg-300 dark:border-obsidian-700 bg-stonebg-50 dark:bg-obsidian-900 focus:outline-none focus:ring-2 focus:ring-forest-500"
           />
         </div>
 
@@ -85,8 +85,8 @@ export default function HistoryDashboard() {
               onClick={() => setSeverityFilter(s)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
                 severityFilter === s
-                  ? 'bg-slate-900 dark:bg-emerald-600 text-white shadow-sm'
-                  : 'bg-warm-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-warm-200'
+                  ? 'bg-forest-950 dark:bg-forest-800 text-white shadow-sm'
+                  : 'bg-stonebg-100 dark:bg-obsidian-800 text-slate-600 dark:text-slate-300 hover:bg-stonebg-200'
               }`}
             >
               {s}
@@ -96,17 +96,17 @@ export default function HistoryDashboard() {
       </div>
 
       {/* Audit Log Table */}
-      <div className="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm space-y-3">
+      <div className="lux-card p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
             Showing {filteredLogs.length} Log Entries
           </span>
-          <span className="text-[11px] text-slate-400">Chronological Order</span>
+          <span className="text-[11px] text-slate-400">Chronological Stream</span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-warm-100 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 font-semibold border-y border-warm-200 dark:border-slate-700">
+            <thead className="bg-stonebg-100 dark:bg-obsidian-900/60 text-slate-500 dark:text-slate-400 font-semibold border-y border-stonebg-200 dark:border-obsidian-700">
               <tr>
                 <th className="py-2.5 px-3">Timestamp</th>
                 <th className="py-2.5 px-3">Action Type</th>
@@ -116,16 +116,16 @@ export default function HistoryDashboard() {
                 <th className="py-2.5 px-3">Severity</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-warm-100 dark:divide-slate-700/60 text-slate-700 dark:text-slate-300">
+            <tbody className="divide-y divide-stonebg-100 dark:divide-obsidian-700/60 text-slate-700 dark:text-slate-300">
               {filteredLogs.map(log => {
                 let badgeClass = 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300';
                 if (log.severity === 'SUCCESS')
-                  badgeClass = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300';
+                  badgeClass = 'bg-forest-100 text-forest-800 dark:bg-forest-950 dark:text-forest-300';
                 if (log.severity === 'WARNING')
-                  badgeClass = 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300';
+                  badgeClass = 'bg-gold-100 text-gold-800 dark:bg-gold-950 dark:text-gold-300';
 
                 return (
-                  <tr key={log.id} className="hover:bg-warm-50 dark:hover:bg-slate-700/30 transition">
+                  <tr key={log.id} className="hover:bg-stonebg-50 dark:hover:bg-obsidian-800/40 transition">
                     <td className="py-3 px-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
                       {new Date(log.timestamp).toLocaleTimeString()}
                       <span className="text-[9px] text-slate-400 block">
@@ -144,7 +144,7 @@ export default function HistoryDashboard() {
                       </span>
                     </td>
                     <td className="py-3 px-3">
-                      <span className="font-mono text-emerald-700 dark:text-emerald-400 font-semibold">
+                      <span className="font-mono text-forest-700 dark:text-forest-300 font-bold">
                         {log.target}
                       </span>
                     </td>

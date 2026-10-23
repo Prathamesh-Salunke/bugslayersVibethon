@@ -4,15 +4,55 @@
 
 @layer base {
   body {
-    @apply font-sans bg-[#FBFBFA] dark:bg-slate-950 text-slate-800 dark:text-slate-100;
+    @apply font-sans bg-stonebg-50 text-slate-800 dark:bg-obsidian-950 dark:text-slate-100 selection:bg-forest-600 selection:text-white;
+    background-image: 
+      radial-gradient(at 15% 15%, rgba(34, 173, 125, 0.04) 0px, transparent 55%),
+      radial-gradient(at 85% 85%, rgba(245, 158, 11, 0.03) 0px, transparent 50%);
+    background-attachment: fixed;
   }
 }
 
-/* Custom Leaflet Map styling */
+/* Glassmorphism & Card surfaces */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 222, 211, 0.75);
+}
+
+.dark .glass-panel {
+  background: rgba(13, 19, 23, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(40, 56, 67, 0.6);
+}
+
+.lux-card {
+  @apply rounded-2xl transition-all duration-200 border;
+  background: #FFFFFF;
+  border-color: rgba(226, 222, 211, 0.9);
+  box-shadow: 0 4px 20px -2px rgba(27, 43, 34, 0.03), 0 2px 6px -1px rgba(27, 43, 34, 0.02);
+}
+
+.lux-card:hover {
+  box-shadow: 0 10px 30px -4px rgba(27, 43, 34, 0.06), 0 4px 10px -2px rgba(27, 43, 34, 0.03);
+}
+
+.dark .lux-card {
+  background: #0f161c;
+  border-color: rgba(40, 56, 67, 0.7);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+}
+
+.dark .lux-card:hover {
+  box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.6);
+}
+
+/* Leaflet Container customization */
 .leaflet-container {
   width: 100%;
   height: 100%;
-  border-radius: 0.75rem;
+  border-radius: 1rem;
   z-index: 10;
   font-family: inherit;
 }
@@ -26,25 +66,9 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.3);
+  background: rgba(140, 150, 160, 0.25);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.5);
-}
-
-.glow-emerald {
-  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.35);
-}
-
-.glassmorphism {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.dark .glassmorphism {
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(140, 150, 160, 0.45);
 }

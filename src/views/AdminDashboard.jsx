@@ -18,6 +18,8 @@ import {
   Navigation,
   ArrowUpRight,
   PieChart as PieChartIcon,
+  Activity,
+  Layers,
 } from 'lucide-react';
 import {
   BarChart,
@@ -60,9 +62,6 @@ export default function AdminDashboard() {
   );
   const totalMealsDelivered = shelters.reduce((acc, s) => acc + (s.receivedToday || 0), 0);
   const availableRidersCount = riders.filter(r => r.status === 'available').length;
-  const atRiskDeliveries = deliveries.filter(
-    d => d.status === 'in_transit' && d.estimatedMinutesRemaining > 30
-  );
 
   // Filtered donations
   const filteredDonations = donations.filter(d => {
@@ -76,10 +75,10 @@ export default function AdminDashboard() {
 
   // Chart data
   const statusData = [
-    { name: 'Delivered', value: deliveries.filter(d => d.status === 'delivered').length + 5, color: '#10b981' },
-    { name: 'In Transit', value: activeDeliveries.length || 1, color: '#3b82f6' },
-    { name: 'Queued', value: donations.filter(d => d.status === 'ready_for_matching').length, color: '#f59e0b' },
-    { name: 'Review Req.', value: reviewRequiredDonations, color: '#ef4444' },
+    { name: 'Delivered', value: deliveries.filter(d => d.status === 'delivered').length + 5, color: '#14684b' },
+    { name: 'In Transit', value: activeDeliveries.length || 1, color: '#2563eb' },
+    { name: 'Queued', value: donations.filter(d => d.status === 'ready_for_matching').length, color: '#d97706' },
+    { name: 'Review Req.', value: reviewRequiredDonations, color: '#dc2626' },
   ];
 
   const shelterCapacityData = shelters.map(s => ({
@@ -97,13 +96,13 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6 pb-16">
       {/* Top Operations Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
-              Central Operations Grid
+            <h1 className="text-2xl font-black text-slate-900 dark:text-white font-display">
+              Central Operations Command
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-forest-100 text-forest-800 dark:bg-forest-950 dark:text-forest-300 border border-forest-200 dark:border-forest-800">
               Live Dispatch Mode
             </span>
           </div>
@@ -115,7 +114,7 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveRole('simlab')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold transition shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gold-500 hover:bg-gold-600 text-slate-950 text-xs font-extrabold transition shadow-md shadow-gold-500/20"
           >
             <Split className="w-4 h-4" />
             <span>Launch Hackathon Lab</span>
@@ -124,48 +123,64 @@ export default function AdminDashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm">
-          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Total Batches</span>
-          <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">{totalDonations}</div>
-          <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3.5">
+        <div className="lux-card p-4">
+          <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold block">
+            Total Batches
+          </span>
+          <div className="text-2xl font-black text-slate-900 dark:text-white mt-1 font-display">
+            {totalDonations}
+          </div>
+          <span className="text-[10px] text-forest-600 dark:text-forest-400 font-bold block mt-0.5">
             {eligibleDonations} AI Eligible
           </span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm">
-          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">In Transit</span>
-          <div className="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">
+        <div className="lux-card p-4">
+          <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold block">
+            In Transit
+          </span>
+          <div className="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1 font-display">
             {activeDeliveries.length}
           </div>
-          <span className="text-[10px] text-slate-400 block mt-0.5">Active delivery legs</span>
+          <span className="text-[10px] text-slate-400 block mt-0.5">Active legs</span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm">
-          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Meals Rescued</span>
-          <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+        <div className="lux-card p-4">
+          <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold block">
+            Meals Rescued
+          </span>
+          <div className="text-2xl font-black text-forest-700 dark:text-forest-300 mt-1 font-display">
             {totalMealsDelivered}
           </div>
-          <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">0% Spoilage</span>
+          <span className="text-[10px] text-forest-600 font-bold block mt-0.5">0% Spoilage</span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm">
-          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Review Required</span>
-          <div className="text-2xl font-black text-amber-500 mt-1">{reviewRequiredDonations}</div>
-          <span className="text-[10px] text-amber-600 font-semibold block mt-0.5">Missing safety meta</span>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm">
-          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Available Riders</span>
-          <div className="text-2xl font-black text-forest-700 dark:text-emerald-300 mt-1">
-            {availableRidersCount} / {riders.length}
+        <div className="lux-card p-4">
+          <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold block">
+            Review Req.
+          </span>
+          <div className="text-2xl font-black text-gold-600 dark:text-gold-400 mt-1 font-display">
+            {reviewRequiredDonations}
           </div>
-          <span className="text-[10px] text-slate-400 block mt-0.5">Ready for dispatch</span>
+          <span className="text-[10px] text-gold-600 font-bold block mt-0.5">Missing meta</span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm">
-          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Open Shelter Demand</span>
-          <div className="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1">
+        <div className="lux-card p-4">
+          <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold block">
+            Riders Ready
+          </span>
+          <div className="text-2xl font-black text-forest-700 dark:text-forest-300 mt-1 font-display">
+            {availableRidersCount}/{riders.length}
+          </div>
+          <span className="text-[10px] text-slate-400 block mt-0.5">Available</span>
+        </div>
+
+        <div className="lux-card p-4">
+          <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold block">
+            Open Demand
+          </span>
+          <div className="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1 font-display">
             {shelters.reduce((acc, s) => acc + (s.openDemand || 0), 0)}
           </div>
           <span className="text-[10px] text-slate-400 block mt-0.5">Across 5 shelters</span>
@@ -178,10 +193,10 @@ export default function AdminDashboard() {
         <div className="lg:col-span-2 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Navigation className="w-4 h-4 text-emerald-600" />
+              <Navigation className="w-4 h-4 text-forest-600 dark:text-forest-400" />
               <span>Real-Time Geospatial Relief Map</span>
             </h2>
-            <span className="text-[11px] text-slate-500">Live GPS & Route Simulation</span>
+            <span className="text-[11px] text-slate-400 font-mono">OpenStreetMap Live Engine</span>
           </div>
 
           <InteractiveMap height="460px" />
@@ -192,16 +207,16 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Clock className="w-4 h-4 text-blue-600" />
-              <span>Active In-Transit Watch</span>
+              <span>In-Transit Deliveries</span>
             </h2>
-            <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded">
-              {activeDeliveries.length} Moving
+            <span className="text-[11px] font-mono font-bold text-blue-600 bg-blue-50 dark:bg-blue-950 px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
+              {activeDeliveries.length} Active
             </span>
           </div>
 
           <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
             {activeDeliveries.length === 0 ? (
-              <div className="p-8 text-center rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 text-slate-400">
+              <div className="lux-card p-8 text-center text-slate-400">
                 <Bike className="w-8 h-8 mx-auto mb-2 opacity-50" />
                 <p className="text-xs">No deliveries currently in transit.</p>
               </div>
@@ -209,11 +224,11 @@ export default function AdminDashboard() {
               activeDeliveries.map(del => (
                 <div
                   key={del.id}
-                  className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm space-y-3"
+                  className="lux-card p-4 space-y-3"
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <span className="text-[11px] font-mono text-slate-400 font-bold">{del.id}</span>
+                      <span className="text-[10px] font-mono text-slate-400 font-bold">{del.id}</span>
                       <h4 className="font-bold text-xs text-slate-900 dark:text-white mt-0.5">
                         {del.donationItemName}
                       </h4>
@@ -222,28 +237,28 @@ export default function AdminDashboard() {
                     <span
                       className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                         del.status === 'diverted'
-                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                          : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                          ? 'bg-gold-100 text-gold-900 dark:bg-gold-950 dark:text-gold-300'
+                          : 'bg-forest-100 text-forest-900 dark:bg-forest-950 dark:text-forest-300'
                       }`}
                     >
                       {del.status === 'diverted' ? 'DIVERTED REROUTE' : 'EN ROUTE'}
                     </span>
                   </div>
 
-                  {/* Rider & Shelter */}
-                  <div className="bg-warm-50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-warm-200 dark:border-slate-700/60 text-xs space-y-1">
+                  {/* Rider & Shelter Details */}
+                  <div className="bg-stonebg-50 dark:bg-obsidian-900/60 p-2.5 rounded-xl border border-stonebg-200 dark:border-obsidian-700/80 text-xs space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-400 text-[11px]">Rider:</span>
+                      <span className="text-slate-400 text-[11px]">Courier:</span>
                       <span className="font-semibold text-slate-800 dark:text-slate-200">{del.riderName}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-slate-400 text-[11px]">Destination:</span>
-                      <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                      <span className="font-semibold text-forest-700 dark:text-forest-400">
                         {del.assignedShelterName}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-400 text-[11px]">ETA Remaining:</span>
+                      <span className="text-slate-400 text-[11px]">ETA:</span>
                       <span className="font-bold text-blue-600">~{del.estimatedMinutesRemaining} mins</span>
                     </div>
                   </div>
@@ -252,13 +267,13 @@ export default function AdminDashboard() {
                   <div className="grid grid-cols-2 gap-2 pt-1">
                     <button
                       onClick={() => stepSimulatedMovement(del.id)}
-                      className="px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-700 dark:text-blue-300 text-[11px] font-semibold transition"
+                      className="px-2.5 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-700 dark:text-blue-300 text-[11px] font-bold transition border border-blue-200 dark:border-blue-800"
                     >
                       Simulate Step +35%
                     </button>
                     <button
                       onClick={() => completeDelivery(del.id)}
-                      className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold transition shadow-sm"
+                      className="px-2.5 py-1.5 rounded-xl bg-forest-800 hover:bg-forest-900 text-white text-[11px] font-bold transition shadow-sm"
                     >
                       Confirm Delivery
                     </button>
@@ -273,10 +288,10 @@ export default function AdminDashboard() {
       {/* Analytics Charts & Shelter Capacity Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Delivery Status Distribution */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm space-y-4">
+        <div className="lux-card p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Delivery Pipeline Status
+            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500">
+              Pipeline Status Distribution
             </h3>
             <PieChartIcon className="w-4 h-4 text-slate-400" />
           </div>
@@ -315,12 +330,12 @@ export default function AdminDashboard() {
         </div>
 
         {/* Shelter Open Demand vs Occupancy Bar Chart */}
-        <div className="lg:col-span-2 p-5 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm space-y-4">
+        <div className="lg:col-span-2 lux-card p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Shelter Intake & Open Demand Balance
+            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500">
+              Shelter Occupancy vs Open Demand Balance
             </h3>
-            <Building2 className="w-4 h-4 text-emerald-600" />
+            <Building2 className="w-4 h-4 text-forest-600 dark:text-forest-400" />
           </div>
 
           <div className="h-48 w-full">
@@ -329,32 +344,32 @@ export default function AdminDashboard() {
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <RechartsTooltip />
-                <Bar dataKey="occupancy" fill="#64748b" name="Current Occupancy" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="openDemand" fill="#10b981" name="Open Meal Demand" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="occupancy" fill="#64748b" name="Current Residents" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="openDemand" fill="#14684b" name="Open Meal Demand" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
           <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-500" /> Gray: Current Residents
+              <span className="w-2.5 h-2.5 rounded-full bg-slate-500" /> Slate: Resident Occupancy
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Emerald: Open Meal Request
+              <span className="w-2.5 h-2.5 rounded-full bg-forest-700" /> Forest: Open Meal Request
             </span>
           </div>
         </div>
       </div>
 
       {/* Donation Operations Table with Filters */}
-      <div className="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm space-y-4">
+      <div className="lux-card p-5 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-              Food Surplus Registry & Allocation Controls
+              Food Surplus Batches & Allocation Controls
             </h3>
             <p className="text-xs text-slate-500">
-              Evaluate safety eligibility, partition oversized donations, and assign riders.
+              Evaluate safety eligibility, partition oversized donations, and assign couriers.
             </p>
           </div>
 
@@ -364,10 +379,10 @@ export default function AdminDashboard() {
               <button
                 key={f}
                 onClick={() => setStatusFilter(f)}
-                className={`px-3 py-1 rounded-xl text-xs font-semibold transition ${
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition ${
                   statusFilter === f
-                    ? 'bg-forest-900 dark:bg-emerald-600 text-white shadow-sm'
-                    : 'bg-warm-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-warm-200'
+                    ? 'bg-forest-950 dark:bg-forest-800 text-white shadow-sm'
+                    : 'bg-stonebg-100 dark:bg-obsidian-800 text-slate-600 dark:text-slate-300 hover:bg-stonebg-200'
                 }`}
               >
                 {f}
@@ -379,19 +394,19 @@ export default function AdminDashboard() {
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-warm-100 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 font-semibold border-y border-warm-200 dark:border-slate-700">
+            <thead className="bg-stonebg-100 dark:bg-obsidian-900/60 text-slate-500 dark:text-slate-400 font-semibold border-y border-stonebg-200 dark:border-obsidian-700">
               <tr>
                 <th className="py-2.5 px-3">Batch ID & Food</th>
-                <th className="py-2.5 px-3">Donor</th>
+                <th className="py-2.5 px-3">Donor Facility</th>
                 <th className="py-2.5 px-3">Quantity</th>
                 <th className="py-2.5 px-3">Safety Status</th>
                 <th className="py-2.5 px-3">Window</th>
-                <th className="py-2.5 px-3">Actions</th>
+                <th className="py-2.5 px-3">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-warm-100 dark:divide-slate-700/60 text-slate-700 dark:text-slate-300">
+            <tbody className="divide-y divide-stonebg-100 dark:divide-obsidian-700/60 text-slate-700 dark:text-slate-300">
               {filteredDonations.map(don => (
-                <tr key={don.id} className="hover:bg-warm-50 dark:hover:bg-slate-700/30 transition">
+                <tr key={don.id} className="hover:bg-stonebg-50 dark:hover:bg-obsidian-800/40 transition">
                   <td className="py-3 px-3">
                     <span className="font-mono text-[10px] text-slate-400 block font-bold">{don.id}</span>
                     <span className="font-bold text-slate-900 dark:text-white block">{don.itemName}</span>
@@ -402,25 +417,25 @@ export default function AdminDashboard() {
                     <span className="text-[10px] text-slate-400 block">{don.location?.address}</span>
                   </td>
                   <td className="py-3 px-3">
-                    <span className="font-black text-sm text-slate-900 dark:text-white">
+                    <span className="font-black text-sm text-slate-900 dark:text-white font-display">
                       {don.quantity}
                     </span>{' '}
                     <span className="text-slate-500">{don.unit}</span>
                   </td>
                   <td className="py-3 px-3">
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                         don.safetyStatus === 'ELIGIBLE'
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                          ? 'bg-forest-100 text-forest-800 dark:bg-forest-950 dark:text-forest-300'
                           : don.safetyStatus === 'REVIEW_REQUIRED'
-                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                          ? 'bg-gold-100 text-gold-800 dark:bg-gold-950 dark:text-gold-300'
                           : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
                       }`}
                     >
                       {don.safetyStatus === 'ELIGIBLE' ? (
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        <CheckCircle2 className="w-3 h-3 text-forest-600 dark:text-forest-400" />
                       ) : (
-                        <AlertCircle className="w-3 h-3 text-amber-600" />
+                        <AlertCircle className="w-3 h-3 text-gold-600" />
                       )}
                       {don.safetyStatus}
                     </span>
@@ -437,7 +452,7 @@ export default function AdminDashboard() {
                     {don.quantity > 50 && don.safetyStatus === 'ELIGIBLE' ? (
                       <button
                         onClick={() => handleRunSplit(don)}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 text-amber-700 dark:text-amber-300 font-bold text-[11px] border border-amber-300 dark:border-amber-700 transition"
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-gold-50 dark:bg-gold-950/60 hover:bg-gold-100 text-gold-800 dark:text-gold-300 font-bold text-[11px] border border-gold-300 dark:border-gold-800 transition shadow-sm"
                       >
                         <Split className="w-3 h-3" />
                         <span>Run Multi-Split</span>
@@ -457,23 +472,23 @@ export default function AdminDashboard() {
 
       {/* Multi-Rider Split Modal Preview */}
       {selectedDonationForSplit && activeSplitResult && (
-        <div className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 shadow-md space-y-3 animate-fade-in">
+        <div className="lux-card p-5 bg-gold-50/60 dark:bg-gold-950/30 border-gold-300 dark:border-gold-800 shadow-md space-y-3 animate-fade-in">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Split className="w-5 h-5 text-amber-600" />
-              <h3 className="font-bold text-sm text-amber-950 dark:text-amber-200">
+              <Split className="w-5 h-5 text-gold-600" />
+              <h3 className="font-bold text-sm text-gold-950 dark:text-gold-200">
                 Multi-Rider Smart Partitioning Plan Generated
               </h3>
             </div>
             <button
               onClick={() => setSelectedDonationForSplit(null)}
-              className="text-xs text-amber-800 dark:text-amber-300 hover:underline font-semibold"
+              className="text-xs text-gold-800 dark:text-gold-300 hover:underline font-semibold"
             >
               Dismiss
             </button>
           </div>
 
-          <p className="text-xs text-amber-900 dark:text-amber-300">
+          <p className="text-xs text-gold-900 dark:text-gold-300">
             {activeSplitResult.explanation}
           </p>
 
@@ -481,19 +496,19 @@ export default function AdminDashboard() {
             {activeSplitResult.plan.map(p => (
               <div
                 key={p.riderId}
-                className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-amber-200 dark:border-slate-700 text-xs space-y-1 shadow-sm"
+                className="lux-card p-3 text-xs space-y-1 shadow-sm"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-slate-900 dark:text-white">{p.riderName}</span>
-                  <span className="text-[10px] text-emerald-600 font-bold">{p.reliabilityScore}% Rel</span>
+                  <span className="text-[10px] text-forest-600 font-bold">{p.reliabilityScore}% Rel</span>
                 </div>
                 <div className="flex justify-between text-slate-600 dark:text-slate-300">
                   <span>Assigned Load:</span>
-                  <span className="font-extrabold text-amber-600">{p.allocatedQuantity} meals</span>
+                  <span className="font-extrabold text-gold-600">{p.allocatedQuantity} meals</span>
                 </div>
                 <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden mt-1">
                   <div
-                    className="bg-amber-500 h-full rounded-full"
+                    className="bg-gold-500 h-full rounded-full"
                     style={{ width: `${p.percentageOfRiderCapacity}%` }}
                   />
                 </div>
@@ -505,37 +520,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
-
-      {/* Live Activity & Audit Stream */}
-      <div className="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-warm-200 dark:border-slate-700 shadow-sm space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Live System Activity Feed
-          </h3>
-          <span className="text-[11px] text-emerald-600 font-semibold">Real-Time Sync</span>
-        </div>
-
-        <div className="divide-y divide-warm-100 dark:divide-slate-700/60 text-xs">
-          {auditLogs.slice(0, 5).map(log => (
-            <div key={log.id} className="py-2.5 flex items-start gap-3">
-              <span className="font-mono text-[10px] text-slate-400 shrink-0 mt-0.5">
-                {new Date(log.timestamp).toLocaleTimeString()}
-              </span>
-              <div className="flex-1 space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{log.actionType}</span>
-                  <span className="text-[10px] bg-slate-100 dark:bg-slate-700 px-1.5 rounded text-slate-500">
-                    {log.actor}
-                  </span>
-                </div>
-                <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed">
-                  {log.description}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
