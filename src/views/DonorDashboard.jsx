@@ -79,6 +79,15 @@ export default function DonorDashboard() {
     notes: 'Kept above 65°C hot hold. Clean stainless containers.',
   });
 
+  // Live Safety Evaluation: run the same shelf-life engine against the current form values
+  const liveSafetyResult = evaluateFoodSafetyEligibility({
+    ...formData,
+    prepTimeHoursAgo:
+      formData.prepTimeHoursAgo === '' || formData.prepTimeHoursAgo === null
+        ? undefined
+        : Number(formData.prepTimeHoursAgo),
+  });
+
   // Tracked delivery
   const trackedDelivery =
     deliveries.find(d => d.donationId === selectedTrackingDonationId) ||

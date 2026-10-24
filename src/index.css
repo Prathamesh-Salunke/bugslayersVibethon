@@ -7,6 +7,20 @@
     @apply font-sans text-slate-100 selection:bg-emerald-700 selection:text-white;
     background-color: #071a10;
   }
+
+  /* Entering info: form fields show readable black text instead of inheriting
+     the page's light text color (which was invisible on white inputs). */
+  input,
+  select,
+  textarea {
+    color: #000000;
+  }
+
+  .dark input,
+  .dark select,
+  .dark textarea {
+    color: #f1f5f9;
+  }
   
   /* Dark scrollbar everywhere */
   * {
